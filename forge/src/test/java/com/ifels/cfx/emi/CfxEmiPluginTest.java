@@ -39,6 +39,7 @@ class CfxEmiPluginTest {
             assertTrue(json.contains("\"" + action.id() + "\""), "missing " + action.id());
         }
         assertTrue(json.contains("\"channels\": [\"keyMapping\"]"), "channels must pin keyMapping");
-        assertTrue(json.contains("\"mod_id\": \"cfx_compat_emi\""), "mod_id must equal the group key");
+        assertTrue(json.contains("\"mod_id\": \"emi\""),
+                "the config must be attributed to EMI so the actions live in EMI's group");
     }
 }

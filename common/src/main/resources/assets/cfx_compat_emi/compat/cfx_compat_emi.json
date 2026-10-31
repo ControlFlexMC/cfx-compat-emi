@@ -1,7 +1,7 @@
 {
-  "mod_id": "cfx_compat_emi",
-  "mod_name": "Control Flex x EMI",
-  "home_page": "https://github.com/ControlFlexMC/cfx-compat-emi",
+  "mod_id": "emi",
+  "mod_name": "EMI",
+  "home_page": "https://modrinth.com/mod/emi",
   "config_version": "1.0.0",
   "mod_versions": [
     {

@@ -84,7 +84,7 @@ EMI only means anything with a screen open. ControlFlex resolves unconfigured dy
 
 Do not reuse EMI's `key.emi.*` strings as `KeyMapping` names. `KeyMapping` names are global identifiers (Forge's `KeyMapping.MAP` is keyed by name); if EMI ever registers bindings with the same names, the two collide and ours silently dies.
 
-Use `key.cfx_compat_emi.<action>` plus our own lang files (22 entries + 1 category — negligible cost). The category is likewise `key.categories.cfx_compat_emi`, which rule ③ of `deriveGroupKey()` maps to the `cfx_compat_emi` mod id; the display name comes from the mod list as "Control Flex x EMI".
+Use `key.cfx_compat_emi.<action>` plus our own lang files (22 entries + 1 category — negligible cost); the category is likewise `key.categories.cfx_compat_emi`. **The group is not decided by the prefix**: ControlFlex groups by the compat JSON's `mod_id` (its ownership index), so these keys still appear under "EMI". The prefix only avoids colliding with any `KeyMapping` EMI registers in the future.
 
 ### D6 — `common` carries all mapping-dependent code (corrected during implementation)
 
@@ -308,7 +308,9 @@ Everything runs on the client thread, from a rendering/event-safe context. Retur
 
 Notes:
 
-- `mod_id` must be `cfx_compat_emi` (the group key), or `resolveCompatDefaultLayers()` finds no config and every action falls back to the MAIN layer.
+- `mod_id` is `emi`: the config declares "these are EMI's actions". Rule ① of `deriveGroupKey` uses the config's ownership index (`compatOwnedKeyToModId`) to attribute `key.cfx_compat_emi.*` to `emi`, so the 22 actions show up under the **EMI** group (display name taken from the mod list) — the discoverable place a player looks for controller bindings.
+- The config arrives late (the bridge exports it during `discoverPlugins()`), so ControlFlex then calls `reattributeModIdLessKeys()`, migrating the already-registered `cfx_compat_emi:*` ids to `emi:*` and moving saved bindings with them (`BindingRegistry.reattributeActionId`) — no rebinding needed.
+- The file stays named `cfx_compat_emi.json`, not `emi.json`: the installer overwrites unconditionally, so a future official/community `emi.json` with the same name would clobber ours; different names coexist and load order decides (see the §12 risk row).
 - `channels: ["keyMapping"]` is declared explicitly so ControlFlex does not take the `screenInput` channel and push `UNKNOWN_KEY` into `screen.keyPressed`.
 - No `ignoreKeys`: all 22 keys are implemented, nothing to hide.
 - No `dependencies`: this config is for the bridge itself.
@@ -385,6 +387,7 @@ Bridge tick
 | `EmiConfig.editMode` / creative gates | Actions fail silently, players get confused | Accepted in v1; v2 adds "action unavailable" feedback |
 | EMI's Forge compile coordinates are uncertain | Build gets stuck | `NeoGradle legacyforge` may not support `fg.deobf`; fall back to `dev.emi:emi-xplat-mojmap` (EMI's README lists it for MultiLoader / VanillaGradle). Verify in the very first implementation step |
 | One button bound to two EMI actions | Both execute | Same semantics ControlFlex gives every action; no dedup, documented |
+| A future official/community `emi.json` | Two configs contend for `compatConfigs["emi"]`; the loser is dropped, and if we lose, the 22 actions fall back to MAIN and die silently | Different file name lowers the odds; the `[ModCompat] Re-attributed key` log and the group header make it diagnosable; falling back to our own group key is the escape hatch |
 
 ## 14. Review log
 
@@ -437,6 +440,12 @@ Bridge tick
 | ID | Finding | Action |
 |---|---|---|
 | R5.1 | The Fabric instance failed to start: `requires version [0.8.9,) of mod 'ControlFlex', but only the wrong version is present: 0.8.9` | Fabric's loader has no bracket ranges (its `VersionPredicateParser` only understands operator prefixes), so the bracket string is compared as a literal version for equality → switched to `>=0.8.9` / `>=1.1.0`; Forge's `mods.toml` keeps the Maven range. Repackaged and deployed to the 1.20.1-fabric instance |
+
+### Round 6 (group attribution, 2026-11-01)
+
+| ID | Finding | Action |
+|---|---|---|
+| R6.1 | Actions appeared under "Control Flex x EMI" while players intuitively look for controller bindings inside EMI | Compat JSON `mod_id` / `mod_name` / `home_page` switched to EMI; the group header comes from the `mod_id`'s mod display name, not from `mod_name`. ControlFlex's ownership index (rule ① of `deriveGroupKey`) plus `reattributeModIdLessKeys()` migrate the registered `cfx_compat_emi:*` ids — and their saved bindings — to `emi:*` |
 
 ## 13. Left to the implementer
 

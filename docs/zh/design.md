@@ -84,7 +84,7 @@ EMI 只在开了界面时有意义。CF 对无配置的动态动作回落到 `MA
 
 不复用 EMI 的 `key.emi.*` 作为 `KeyMapping` 名。`KeyMapping` 名是全局标识（Forge 的 `KeyMapping.MAP` 以 name 为键），一旦 EMI 未来真的注册了同名键位，两个 KeyMapping 会撞名，我们的那个静默失效。
 
-改用 `key.cfx_compat_emi.<action>` + 自带中英语言文件（23 条 + 1 条分类，成本可忽略）。分类同样用自有 key `key.categories.cfx_compat_emi`，CF 的 `deriveGroupKey()` 第 ③ 条规则会把它归到 `cfx_compat_emi` 这个 modId，显示名取 mod 列表里的 "Control Flex x EMI"。
+改用 `key.cfx_compat_emi.<action>` + 自带中英语言文件（22 条 + 1 条分类，成本可忽略）。分类同样用自有 key `key.categories.cfx_compat_emi`。**分组归属不由前缀决定**：CF 按 compat JSON 的 `mod_id`（归属索引）分组，所以这套键名照样显示在 "EMI" 分组下；前缀只用于避免与 EMI 未来注册的同名 `KeyMapping` 冲突。
 
 ### D6 — `common` 承载全部映射相关代码（实现期修正）
 
@@ -308,7 +308,9 @@ for (EmiAction action : fire) dispatch(action);      // 见 8.4
 
 要点：
 
-- `mod_id` 必须是 `cfx_compat_emi`（= groupKey），否则 `resolveCompatDefaultLayers()` 查不到配置，全部动作回落 MAIN 层。
+- `mod_id` 写 `emi`：这份配置在声明「这些是 EMI 的动作」。CF 的 `deriveGroupKey` 第 ① 条用配置的归属索引（`compatOwnedKeyToModId`）把 `key.cfx_compat_emi.*` 归到 `emi`，于是 22 个动作出现在 **EMI** 分组下（显示名取 mod 列表里的 "EMI"）—— 玩家在 CF 里找手柄键位时的直觉路径。
+- 配置是晚到的（桥接在 `discoverPlugins()` 阶段才导出），CF 随后会调 `reattributeModIdLessKeys()` 把已注册的 `cfx_compat_emi:*` 迁移成 `emi:*`，并通过 `BindingRegistry.reattributeActionId` 同步迁移已保存的绑定，玩家不用重绑。
+- 文件名保持 `cfx_compat_emi.json`，不叫 `emi.json`：安装器是无条件覆盖写，若将来官方/社区也放一份 `emi.json`，同名会互相清掉；不同名则各自存在，冲突时由加载顺序决出（见 §12 风险）。
 - `channels: ["keyMapping"]` 显式声明，避免 CF 走 `screenInput` 通道把 `UNKNOWN_KEY` 送进 `screen.keyPressed`。
 - 不使用 `ignoreKeys`：22 个键全部有实现，没有需要隐藏的。
 - 不加 `dependencies`：这份配置就是给桥接自己的。
@@ -385,6 +387,7 @@ for (EmiAction action : fire) dispatch(action);      // 见 8.4
 | `EmiConfig.editMode` / 创造模式门禁 | 动作静默失败，玩家困惑 | v1 接受；v2 做「动作不可用」的提示 |
 | Forge 侧 EMI 编译坐标不确定 | 构建卡住 | `NeoGradle legacyforge` 未必支持 `fg.deobf`；退路是 `dev.emi:emi-xplat-mojmap`（EMI README 给 MultiLoader / VanillaGradle 的方案）。实现第一步就验证 |
 | 同一按钮绑两个 EMI 动作 | 两个都执行 | 与 CF 对所有动作的语义一致，不做去重；文档说明 |
+| 将来出现官方/社区的 `emi.json` | 两份配置争 `compatConfigs["emi"]`，输了的那份失效；我们输了则 22 个动作回落 MAIN、静默失灵 | 文件名用 `cfx_compat_emi.json` 降低覆盖概率；`[ModCompat] Re-attributed key` 日志与分组显示可定位；必要时退回自有 groupKey |
 
 ## 14. 评审记录
 
@@ -437,6 +440,12 @@ for (EmiAction action : fire) dispatch(action);      // 见 8.4
 | 编号 | 发现 | 处置 |
 |---|---|---|
 | R5.1 | Fabric 实例启动直接失败：`requires version [0.8.9,) of mod 'ControlFlex', but only the wrong version is present: 0.8.9` | Fabric loader 不支持方括号区间（源码 `VersionPredicateParser` 只认运算符前缀），方括号串被当字面版本做等值比较 → 改用 `>=0.8.9` / `>=1.1.0`；Forge 的 `mods.toml` 维持 Maven 区间。已重打包并部署到 1.20.1-fabric 实例 |
+
+### 第六轮（分组归属，2026-11-01）
+
+| 编号 | 发现 | 处置 |
+|---|---|---|
+| R6.1 | 动作显示在 "Control Flex x EMI" 分组下，而玩家的直觉是去 EMI 里找手柄键位 | compat JSON 的 `mod_id` / `mod_name` / `home_page` 改成 EMI；分组名来自 `mod_id` 的模组显示名，`mod_name` 本身不参与分组。CF 的归属索引（`deriveGroupKey` 规则 ①）与 `reattributeModIdLessKeys()` 会把已注册的 `cfx_compat_emi:*` 连同已保存绑定一起迁到 `emi:*` |
 
 ## 13. 留给实现者的决定
 
