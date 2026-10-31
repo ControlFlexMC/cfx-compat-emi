@@ -36,6 +36,7 @@ legacyForge {
 sourceSets {
     main {
         java.srcDir(rootProject.file('common/src/main/java'))
+        resources.srcDir(rootProject.file('common/src/main/resources'))
     }
     test {
         compileClasspath += sourceSets.main.output
@@ -59,6 +60,8 @@ dependencies {
     compileOnly "com.github.ControlFlexMC:control-flex-api:${controlflex_api_version}"
     // EMI, mojmap build (the same class names the Forge runtime sees).
     compileOnly "dev.emi:emi-xplat-mojmap:${emi_version}"
+    // The plugin test needs the API on the test classpath too.
+    testImplementation "com.github.ControlFlexMC:control-flex-api:${controlflex_api_version}"
     testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
 }
 

@@ -28,6 +28,7 @@ loom {
 sourceSets {
     main {
         java.srcDir(rootProject.file('common/src/main/java'))
+        resources.srcDir(rootProject.file('common/src/main/resources'))
     }
     test {
         compileClasspath += sourceSets.main.output
