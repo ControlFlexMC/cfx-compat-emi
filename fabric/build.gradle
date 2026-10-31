@@ -79,7 +79,7 @@ processResources {
         'minecraft_version'       : minecraft_version,
         'fabric_loader_version'   : fabric_loader_version,
         'java_version'            : java_version,
-        'controlflex_version_range': controlflex_version_range,
+        'controlflex_version_range': controlflex_version_range_fabric,
         'emi_version_range'       : emi_version_range,
     ]
 

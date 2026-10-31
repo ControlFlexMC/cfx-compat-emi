@@ -320,6 +320,7 @@ Notes:
 ### 8.8 Version gating
 
 - Loader metadata hard-depends on `controlflex` ≥ 0.8.9 and `emi` (any 1.20.1 build). Both are mandatory: the loader refuses to start the bridge, and there is no runtime `isModLoaded` branch (D8).
+- **Range syntax differs per loader:** Forge's `mods.toml` uses Maven ranges (`[0.8.9,)`); Fabric's loader **does not support bracket ranges** — `VersionPredicateParser` understands only `>=` / `<=` / `<` / `>` / `~` / `^` / `=` plus space-separated terms. `[0.8.9,)` is parsed as a literal version and compared with `EQUAL`, which can never match `0.8.9`. `fabric.mod.json` therefore uses `>=0.8.9` / `>=1.1.0`, fed by `controlflex_version_range_fabric`.
 - No extra runtime version check in v1 (the only API surface used is `ICompatAssetInstaller`, stable since 0.8.5; the real risk is on EMI's side, see §12).
 
 ### 8.9 Logging
@@ -430,6 +431,12 @@ Bridge tick
 | R4.5 | A clean clone could not build: the wrapper jar was ignored by `*.jar`, and `org.gradle.java.home` pinned a local path | `.gitignore` un-ignores `gradle/wrapper/gradle-wrapper.jar`; the property became a comment, README explains JAVA_HOME |
 | R4.6 | `copyId` has no recipe context on a recipe screen (`RecipeScreen` is not a `HandledScreen`) | No code change; D9 / action table / README now say "sidebar favourites only" |
 | R4.7 | Only 1 of 4 logging points from §8.9 existed (install result discarded, no ready line) | Plugin logs install failure and readiness |
+
+### Round 5 (real launch, 2026-11-01)
+
+| ID | Finding | Action |
+|---|---|---|
+| R5.1 | The Fabric instance failed to start: `requires version [0.8.9,) of mod 'ControlFlex', but only the wrong version is present: 0.8.9` | Fabric's loader has no bracket ranges (its `VersionPredicateParser` only understands operator prefixes), so the bracket string is compared as a literal version for equality → switched to `>=0.8.9` / `>=1.1.0`; Forge's `mods.toml` keeps the Maven range. Repackaged and deployed to the 1.20.1-fabric instance |
 
 ## 13. Left to the implementer
 

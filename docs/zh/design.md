@@ -320,6 +320,7 @@ for (EmiAction action : fire) dispatch(action);      // 见 8.4
 ### 8.8 版本门控
 
 - 加载器元数据硬依赖：`controlflex` ≥ 0.8.9、`emi`（任意 1.20.1 版本）。两者缺失都由加载器拒绝启动桥接，运行期没有 `isModLoaded` 分支（D8）。
+- **区间语法按加载器分开**：Forge 的 `mods.toml` 用 Maven 区间 `[0.8.9,)`；Fabric 的 loader **不支持方括号区间** —— `VersionPredicateParser` 只认 `>=` / `<=` / `<` / `>` / `~` / `^` / `=` 以及空格分隔的多条件，`[0.8.9,)` 会被 `VersionParser` 解析成字面版本串，再以 `EQUAL` 去比 `0.8.9`，必然失败。所以 `fabric.mod.json` 用 `>=0.8.9` / `>=1.1.0`，对应 `gradle.properties` 里的 `controlflex_version_range_fabric`。
 - 运行时不做额外版本判断（v1 只用 `ICompatAssetInstaller`，是 0.8.5 起的稳定接口；真正的风险在 EMI 侧的实现类，见 §12）。
 
 ### 8.9 日志
@@ -430,6 +431,12 @@ for (EmiAction action : fire) dispatch(action);      // 见 8.4
 | R4.5 | 干净克隆无法构建：wrapper jar 被 `*.jar` 忽略；`org.gradle.java.home` 写死本机路径 | `.gitignore` 放行 `gradle/wrapper/gradle-wrapper.jar`；属性改成注释，README 说明 JAVA_HOME |
 | R4.6 | `copyId` 在配方页拿不到 recipe 上下文（`RecipeScreen` 不是 `HandledScreen`） | 不改代码，D9 / 动作表 / README 改为「仅侧栏收藏项等」 |
 | R4.7 | §8.9 的日志点只实现 1/4（安装结果被丢弃、无 ready 行） | 插件记录安装失败与 ready 行 |
+
+### 第五轮（真机启动，2026-11-01）
+
+| 编号 | 发现 | 处置 |
+|---|---|---|
+| R5.1 | Fabric 实例启动直接失败：`requires version [0.8.9,) of mod 'ControlFlex', but only the wrong version is present: 0.8.9` | Fabric loader 不支持方括号区间（源码 `VersionPredicateParser` 只认运算符前缀），方括号串被当字面版本做等值比较 → 改用 `>=0.8.9` / `>=1.1.0`；Forge 的 `mods.toml` 维持 Maven 区间。已重打包并部署到 1.20.1-fabric 实例 |
 
 ## 13. 留给实现者的决定
 
