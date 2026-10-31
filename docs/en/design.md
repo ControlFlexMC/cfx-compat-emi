@@ -1,0 +1,407 @@
+# Control Flex × EMI Compat Bridge — Design
+
+- Project: `cfx-compat-emi`
+- Targets: Minecraft 1.20.1 / Forge 47.x + Fabric 0.15.x
+- Depends on: ControlFlex ≥ 0.8.9, EMI 1.1.24 (`dev.emi:emi-*`)
+- Status: design approved, ready to implement
+
+## 1. Background
+
+All 26 of EMI's keybinds live in its own system: `dev.emi.emi.input.EmiBind` values are persisted in EMI's QDCSS config (`binds.*`) and matched inside EMI's screens with `matchesKey` / `matchesMouse`. EMI registers **no Minecraft `KeyMapping` at all**.
+
+ControlFlex builds its dynamic action pool by scanning `mc.options.keyMappings` (`ModCompatManager.scanModdedKeyMappings()`), so EMI is an empty set in ControlFlex's mod-compat list — and, for the same reason, invisible in vanilla Options → Controls → Key Binds. Players cannot trigger view-recipe, favorite, or crafting from a controller.
+
+Research notes: `control-flex-1.20.1/docs/research/research-emi-compat-bridge.md`. This design is the implementation-ready version of that research, with one of its conclusions corrected (see D2).
+
+## 2. Goals
+
+**v1 ships the action layer only: press a controller button, and the thing actually happens inside EMI.**
+
+- 23 EMI actions can be bound, rebound, and layered in ControlFlex;
+- Actions execute correctly inside EMI screens (view recipe/uses, favorite, crafting, hiding, cheat-give, back/forward, search control);
+- Forge and Fabric behave identically;
+- No changes to ControlFlex itself, no mixins.
+
+## 3. Non-goals
+
+- **Rebinding EMI's own keys.** A ControlFlex binding does not write back to EMI's QDCSS config. What the player changes is "which controller button fires which action", not "what EMI's R key is".
+- **Three leftover actions:** `defaultStack`, `deleteCursorStack`, `showCraft`. The first two are inline logic inside `RecipeScreen` / `mouseReleased`; opening a mixin for them is not worth it. `showCraft` is a *held state* polled via `isHeld()`, a different semantic class from the other 23 instantaneous actions.
+- **Presentation polish:** guide glyphs ("press X to view recipes"), radial-menu icons, target fallback when there is no cursor. Deferred to v2.
+- **NeoForge / 1.21.** This branch is 1.20.1 forge + fabric only.
+- **Changes to ControlFlex or control-flex-api.**
+
+## 4. Anti-goals (works technically, still a failure)
+
+- Requires hand-editing JSON or config files to function.
+- Double-fires against EMI's own binds (one press, two executions).
+- Throws or spams logs when an action is pressed outside an EMI screen.
+- The bridge is installed but ControlFlex shows 23 dead keys that do nothing.
+
+## 5. Constraints
+
+- **No mixins.** EMI and ControlFlex already expose what we need (`EmiScreenManager.stackInteraction` / `genericInteraction` / `recipeInteraction` / `toggleVisibility` are all `public static`).
+- **Cross-mapping.** EMI's xplat artifact is Yarn-named on Fabric (`MinecraftClient`, `InputUtil`) and Mojmap-named on Forge (`Minecraft`, `InputConstants`). `common/src/main/java` is added as a `srcDir` to each loader subproject and therefore **compiled twice**, so it must contain no EMI or MC types.
+- **Client-only mod** (`environment: client`); no server side.
+- **EMI is a hard dependency**; the mod is meaningless without it.
+
+## 6. Key decisions
+
+### D1 — Register pseudo `KeyMapping`s so ControlFlex discovers them
+
+`scanModdedKeyMappings()` filters only vanilla names and the `key.controlflex.` prefix; everything else is collected, and `registerDynamicActions()` registers each as a `groupKey:keyName` dynamic action **without requiring a compat JSON**.
+
+Registering 23 `KeyMapping`s is therefore enough for ControlFlex to pick them up, with zero changes on the ControlFlex side. It is the only path to the binding list without patching ControlFlex.
+
+### D2 — Trigger from `KeyMapping` state, not `IActionStateProvider`
+
+The research assumed polling `isGuiActionActive(actionId)`. **That is wrong.**
+
+In `BindingMapper`'s GUI phase, only `HOLD` / `TOGGLE` / `DELAY_HOLD` / `LONG_HOLD` / `DOUBLE_HOLD` / `DOUBLE_TOGGLE` add the action to `activeGuiActions`. `PRESS` / `TAP` / `RELEASE` / `LONG_PRESS` / `DELAY_PRESS` / `DOUBLE_PRESS` / `DOUBLE_TAP` only call `addPendingGuiRelease()`, so `isGuiActionActive()` is always false for them. A controller's most natural mapping (TAP) would never work.
+
+Instead we use something ControlFlex always does: `GuiActionHandler.handleDynamicCompatAction()` unconditionally calls `controlflex$setPressed(true)` (except for the virtualKbm channel). So:
+
+- `KeyMapping.isDown()` → held;
+- `KeyMapping.consumeClick()` → one-shot click.
+
+Note that `controlflex$setPressed(true)` is `setDown(true)` plus an **unconditional** `clickCount++` (every call increments, with no transition check), so under HOLD mode `clickCount` grows every tick. The detector must look at the rising edge of `isDown` first, use `clicked` only as a fallback for "the press already ended but happened within this frame", and must drain `clicked` every frame (`consumeClick()` consumes on read).
+
+Also, `processPendingGuiReleases` documents that release happens on a **subsequent tick** ("The release must be dispatched on a subsequent tick"), so `isDown` is still true on the press frame — the rising-edge path is the primary one and `consumeClick()` is the safety net.
+
+Combining both signals covers every trigger mode and drops the dependency on `IActionStateProvider`. The bridge's only ControlFlex API dependency becomes `ICompatAssetInstaller` (0.8.5+).
+
+### D3 — Call EMI's dispatchers with a predicate; do not inject keys
+
+Signatures such as `EmiScreenManager.stackInteraction(EmiStackInteraction, Function<EmiBind, Boolean>)` accept a predicate that matches exactly one bind, so we reuse EMI's complete behaviour branches (crafting, cheat, hiding) as-is.
+
+This is better than injecting keys because it does not depend on `EmiInput.getCurrentModifiers()` reading real GLFW state (`Screen.hasControlDown()` / `InputUtil.isKeyPressed`) and is not constrained by scancode matching. The focus-yield rule is not left to the host screen's `keyPressed`; it is reproduced explicitly in D7.
+
+### D4 — All actions belong to the GUI layer
+
+EMI only means anything with a screen open. ControlFlex resolves unconfigured dynamic actions to the `MAIN` layer (the `isEmpty()` branch of `resolveDefaultLayers()`) and never dispatches them in the GUI phase. The bridge must therefore ship a compat JSON that lists all 23 keys under `screenKeys` and declares `channels: ["keyMapping"]` explicitly. `ModCompatConfig.DEFAULT_SCREEN` is `{keyMapping, screenInput}` — without the declaration, ControlFlex *will* take the `screenInput` channel and push `UNKNOWN_KEY` (code -1) into `screen.keyPressed`.
+
+### D5 — Own keybinding namespace
+
+Do not reuse EMI's `key.emi.*` strings as `KeyMapping` names. `KeyMapping` names are global identifiers (Forge's `KeyMapping.MAP` is keyed by name); if EMI ever registers bindings with the same names, the two collide and ours silently dies.
+
+Use `key.cfx_compat_emi.<action>` plus our own lang files (23 entries + 1 category — negligible cost). The category is likewise `key.categories.cfx_compat_emi`, which rule ③ of `deriveGroupKey()` maps to the `cfx_compat_emi` mod id; the display name comes from the mod list as "Control Flex x EMI".
+
+### D6 — `common` holds mapping-agnostic code only
+
+Allowed in `common`: the ControlFlex API plugin, action-id constants, the edge-detection state machine, pure gate functions.
+Forbidden in `common`: any `net.minecraft.*`, any `dev.emi.*`. The actual EMI calls are written once per loader — deliberately duplicated, because compile-time type safety beats saving 200 lines.
+
+### D7 — Mirror EMI's own gates; do not get clever
+
+ControlFlex's philosophy is "a controller button is a command, not input" (blur the text field, then send the key). This bridge **does not** adopt that: pressing a controller button means "perform one of EMI's actions on my behalf". If EMI itself would ignore that key, forwarding it anyway produces the absurd case of typing in an anvil while the recipe viewer flips pages.
+
+Gate order therefore matches `EmiScreenManager.keyPressed()` exactly:
+
+1. No screen / `EmiScreenBase.getCurrent()` empty → drop;
+2. `EmiScreenManager.isDisabled()` (i.e. `!EmiReloadManager.isLoaded() || !EmiConfig.enabled`) → only `toggleVisibility` passes, everything else is dropped. This covers both "EMI switched off" and "EMI reloading", so the reload window cannot throw repeatedly and fill the log;
+3. Any `isActive() && visible` `TextFieldWidget` in the screen element tree → drop everything. EMI's `hasFocusedTextField(screen, 10)` is private, so each loader reimplements it: recurse through `ParentElement.children()`, depth 10.
+
+State the side effect plainly: while typing in an anvil rename box, a sign, a book, or another mod's input field, bound actions do not fire — same behaviour as EMI's own keybinds.
+
+### D8 — `controlflex` is a hard dependency
+
+The bridge is meaningless without ControlFlex, so follow the ecosystem convention: Forge `mods.toml` with `mandatory=true`, `ordering="AFTER"`, `versionRange="${controlflex_version_range}"`; Fabric `fabric.mod.json` `depends` with the same range. No runtime `isModLoaded("controlflex")` check (the loader already guarantees it), and no "loads without ControlFlex" branch.
+
+### D9 — Recipe context is the union of both sources
+
+`EmiApi.getRecipeContext(EmiIngredient)` only returns non-null for `EmiFavorite`, so using it alone turns `copyId` into a dead key on recipe screens. `EmiStackInteraction.getRecipeContext()` is public and returns non-null both for stacks hovered on a recipe screen and for sidebar favourites.
+
+So `RECIPE`-kind actions resolve context as: `hovered.getRecipeContext()` first, falling back to `EmiApi.getRecipeContext(hovered.getStack())`. This is a deliberate superset of EMI (EMI itself uses `RecipeScreen`'s private `group.recipe`, unreachable without mixins); the effect is that `copyId` works both on recipe screens and on favourites.
+
+## 7. Architecture
+
+```
+cfx-compat-emi/
+├── settings.gradle                 include 'forge', 'fabric'
+├── gradle.properties               mod metadata + versions
+├── common/src/main/java/com/ifels/cfx/emi/
+│   ├── CfxEmiPlugin.java           IControlFlexPlugin: exports the compat JSON
+│   ├── EmiAction.java              action table (id / bindKey / kind)
+│   ├── ActionKind.java             STACK / GENERIC / RECIPE / API
+│   └── EdgeDetector.java           press/click dedup state machine (plain Java)
+├── forge/src/main/java/com/ifels/cfx/emi/forge/
+│   ├── CfxEmiMod.java              entry: key registration + ClientTickEvent.Post
+│   ├── ForgeKeyRegistration.java   23 KeyMappings (Mojmap)
+│   └── ForgeEmiDispatch.java       EmiConfig / EmiScreenManager / EmiApi calls
+└── fabric/src/main/java/com/ifels/cfx/emi/fabric/
+    ├── CfxEmiMod.java              ClientModInitializer: KeyBindingHelper + END_CLIENT_TICK
+    ├── FabricKeyRegistration.java  same, Yarn
+    └── FabricEmiDispatch.java      same, Yarn
+```
+
+### 7.1 `CfxEmiPlugin` (common)
+
+Implements `IControlFlexPlugin` and does exactly one thing: in `onInstallCompatConfigs(ICompatAssetInstaller)`, install `/assets/cfx_compat_emi/compat/cfx_compat_emi.json` as `mods/cfx_compat_emi.json`.
+
+Reuse `cfx-compat-epicfight`'s `CompatConfigInstaller`: read the classpath bytes → SHA-1 compare against the existing file under `mods/` → overwrite only when missing or different, so the user's disk copy is not rewritten on every launch.
+
+`getModId()` returns `cfx_compat_emi`; `onControlFlexReady()` logs one line (v1 needs no runtime service from ControlFlex).
+
+SPI file: `META-INF/services/com.ifels.controlflex.api.IControlFlexPlugin`.
+
+### 7.2 `EmiAction` (common)
+
+An enum with 23 entries and three fields:
+
+| Field | Meaning |
+|---|---|
+| `id` | ControlFlex action name, `key.cfx_compat_emi.<name>` |
+| `bindKey` | Name of the corresponding `EmiBind` field (`viewRecipes`, …), used only by the per-loader switch |
+| `kind` | Dispatch category, see §8.4 |
+
+Keeping `id` and `bindKey` separate lets `common` avoid referencing EMI types while giving the per-loader switch a stable key.
+
+### 7.3 `EdgeDetector` (common)
+
+One instance per action, a pure state machine:
+
+```java
+public boolean update(boolean isDown, boolean clicked) {
+    boolean fire = (isDown && !lastDown) || (!isDown && clicked);
+    lastDown = isDown;
+    return fire;
+}
+```
+
+- Held (HOLD mode): `isDown` stays true, fires on the first frame only;
+- Tap (TAP/PRESS mode): if press and release happen between two samples, `isDown` is already false but `consumeClick()` is true → fire;
+- Two taps within one tick: `clickCount` reaches 2 but `consumeClick()` returns true once → fires once (acceptable).
+
+The caller **must drain `clicked` every frame** (`consumeClick()` consumes on read), otherwise gated-out frames accumulate clicks that fire later by surprise.
+
+## 8. Detailed design
+
+### 8.1 Key registration
+
+- 23 `KeyMapping`s: name `key.cfx_compat_emi.<snake_case bindKey>`, category `key.categories.cfx_compat_emi`, default key `InputConstants.UNKNOWN_KEY` (`InputConstants.UNKNOWN`).
+- An empty default is deliberate: a pseudo key bound to a real key would also fire on real keystrokes and could double-fire against EMI's own binds.
+- **`controlflex` is guaranteed present by the loader** (D8); no runtime `isModLoaded` check. The mod itself is client-only, so no extra dist check is needed.
+- Registration point: Forge `RegisterKeyMappingsEvent`; Fabric `KeyBindingHelper.registerKeyBinding` (in `ClientModInitializer`).
+- Ordering is safe: ControlFlex scans during deferred init (`ModCompatManager.initialize()`), after every mod has registered its keys.
+- On Forge, a directly constructed `KeyMapping` with a custom category enters `KeyBindsScreen`'s `Arrays.sort`; ControlFlex's `KeyMappingAccessorMixin` already rewrites `compareTo` to tolerate categories missing from `CATEGORY_SORT_ORDER`, so there is no NPE (on Fabric, `KeyBindingHelper` compensates via `addCategory`). That dependency is covered by the hard dependency too.
+
+### 8.2 Trigger loop
+
+Forge: `ClientTickEvent.Post`; Fabric: `ClientTickEvents.END_CLIENT_TICK`. Every frame:
+
+```
+Screen screen = mc.screen;
+if (screen == null) { drainAll(); resetAll(); wasInEmi = false; return; }
+if (EmiScreenBase.getCurrent().isEmpty()) { drainAll(); resetAll(); wasInEmi = false; return; }
+if (!wasInEmi) { drainAll(); resetAll(); wasInEmi = true; }   // first frame inside EMI: drop stale presses
+
+boolean disabled = EmiScreenManager.isDisabled();
+boolean focusedField = !disabled && hasFocusedTextField(screen);  // disabled: the toggle is checked first
+
+List<EmiAction> fire = new ArrayList<>();
+for (EmiAction action : EmiAction.values()) {
+    KeyMapping km = keyMap.get(action);
+    boolean down = km.isDown();
+    boolean clicked = km.consumeClick();
+    if (!down && !clicked) continue;                 // fast path for most frames
+
+    if (disabled && action != EmiAction.TOGGLE_VISIBILITY) continue;
+    if (focusedField) continue;
+
+    if (detectors[action].update(down, clicked)) fire.add(action);
+}
+if (fire.isEmpty()) return;
+
+EmiScreenManager.recalculate();                      // mirror EMI's keyPressed prologue
+for (EmiAction action : fire) dispatch(action);      // see 8.4
+```
+
+Three helpers:
+
+- `drainAll()`: call `consumeClick()` once per key so clicks made outside EMI screens do not pile up and all fire the next time an EMI screen opens.
+- `resetAll()`: reset `lastDown` on all 23 `EdgeDetector`s. **This one is required**: if the button is already held when the screen opens (say the same button opens the inventory), the first frame sees `isDown == true` with `lastDown == false` and fires a phantom action.
+- `recalculate()` runs at most once per frame, never inside the loop.
+
+### 8.3 Gates
+
+Evaluated in order, short-circuiting; a failed gate discards the input:
+
+| Gate | Test | Rationale |
+|---|---|---|
+| Screen open | `mc.screen != null` | EMI only works inside screens |
+| EMI present | `!EmiScreenBase.getCurrent().isEmpty()` | Mirrors the first two lines of `keyPressed` (`base.isEmpty()` returns false, disabled or not) |
+| EMI ready | when `EmiScreenManager.isDisabled()`, only `toggleVisibility` passes | Mirrors the branch order: with EMI off or reloading, only the toggle works — otherwise a controller could not turn EMI back on |
+| No focused text field | no `isActive() && visible` `TextFieldWidget` in the screen element tree | Mirrors `hasFocusedTextField(screen, 10)`; **not checked while disabled** (EMI's disabled branch runs before the focus check) |
+
+All four gates match EMI's own keybind behaviour (see D7). `EmiApi.isSearchFocused()` is no longer used on its own: EMI's search box is itself a `TextFieldWidget` in that tree and is covered by the fourth gate.
+
+Not gated, but they fail silently by EMI's own semantics (no extra handling): `hideStack` needs `EmiConfig.editMode`; `cheat*` need creative mode plus `SidebarEmiStackInteraction`; `craft*` need a stack hovered in the sidebar. All return false and throw nothing.
+
+### 8.4 Dispatch routing
+
+| kind | Call |
+|---|---|
+| `STACK` | `EmiScreenManager.stackInteraction(EmiApi.getHoveredStack(true), b -> b == EmiConfig.<bindKey>)` |
+| `STACK_THEN_RECIPE` | `STACK` first; if false and `resolveRecipeContext(hovered) != null`, then `recipeInteraction(ctx, ...)` (used by `favorite`) |
+| `RECIPE` | `EmiScreenManager.recipeInteraction(resolveRecipeContext(hovered), b -> b == EmiConfig.<bindKey>)`, where `resolveRecipeContext` prefers `hovered.getRecipeContext()` and falls back to `EmiApi.getRecipeContext(hovered.getStack())` (D9) |
+| `GENERIC` | `EmiScreenManager.genericInteraction(b -> b == EmiConfig.<bindKey>)` |
+| `API` | `EmiApi.displayAllRecipes()` (for `displayAllRecipes`; EMI's own `keyPressed` calls it directly too) |
+
+Everything runs on the client thread, from a rendering/event-safe context. Return values are ignored (v1 gives no UI feedback for a failed action).
+
+### 8.5 Action table (23)
+
+| # | bindKey | kind | Notes |
+|---|---|---|---|
+| 1 | `toggleVisibility` | GENERIC | Toggle EMI |
+| 2 | `focusSearch` | GENERIC | |
+| 3 | `clearSearch` | GENERIC | |
+| 4 | `displayAllRecipes` | API | |
+| 5 | `viewRecipes` | STACK | |
+| 6 | `viewUses` | STACK | |
+| 7 | `favorite` | STACK_THEN_RECIPE | Falls back to recipe-level favorite |
+| 8 | `viewStackTree` | STACK | Needs a `recipeContext` |
+| 9 | `viewTree` | GENERIC | |
+| 10 | `back` | GENERIC | |
+| 11 | `forward` | GENERIC | |
+| 12 | `craftOne` | STACK | Only meaningful on sidebar stacks |
+| 13 | `craftAll` | STACK | Same |
+| 14 | `craftOneToInventory` | STACK | Same |
+| 15 | `craftAllToInventory` | STACK | Same |
+| 16 | `craftOneToCursor` | STACK | Same |
+| 17 | `cheatOneToInventory` | STACK | Creative only |
+| 18 | `cheatStackToInventory` | STACK | Creative only |
+| 19 | `cheatOneToCursor` | STACK | Creative only |
+| 20 | `cheatStackToCursor` | STACK | Creative only |
+| 21 | `hideStack` | STACK | Needs `EmiConfig.editMode` |
+| 22 | `hideStackById` | STACK | Same |
+| 23 | `copyId` | RECIPE | Works on recipe screens and favourites (D9) |
+
+### 8.6 Compat JSON
+
+`/assets/cfx_compat_emi/compat/cfx_compat_emi.json` → installed to `config/controlflex/compat/mods/cfx_compat_emi.json`:
+
+```json
+{
+  "mod_id": "cfx_compat_emi",
+  "mod_name": "Control Flex x EMI",
+  "home_page": "https://github.com/ControlFlexMC/cfx-compat-emi",
+  "config_version": "1.0.0",
+  "mod_versions": [
+    {
+      "version": "",
+      "screenKeys": {
+        "channels": ["keyMapping"],
+        "key.cfx_compat_emi.view_recipes": {},
+        "...": {}
+      }
+    }
+  ]
+}
+```
+
+Notes:
+
+- `mod_id` must be `cfx_compat_emi` (the group key), or `resolveCompatDefaultLayers()` finds no config and every action falls back to the MAIN layer.
+- `channels: ["keyMapping"]` is declared explicitly so ControlFlex does not take the `screenInput` channel and push `UNKNOWN_KEY` into `screen.keyPressed`.
+- No `ignoreKeys`: all 23 keys are implemented, nothing to hide.
+- No `dependencies`: this config is for the bridge itself.
+
+### 8.7 Language resources
+
+`assets/cfx_compat_emi/lang/en_us.json` and `zh_cn.json`: 23 action names plus `key.categories.cfx_compat_emi`. Wording should match EMI's own terminology ("View Recipes" / "查看配方") so players can cross-reference EMI's Binds screen.
+
+### 8.8 Version gating
+
+- Loader metadata hard-depends on `controlflex` ≥ 0.8.9 and `emi` (any 1.20.1 build). Both are mandatory: the loader refuses to start the bridge, and there is no runtime `isModLoaded` branch (D8).
+- No extra runtime version check in v1 (the only API surface used is `ICompatAssetInstaller`, stable since 0.8.5; the real risk is on EMI's side, see §12).
+
+### 8.9 Logging
+
+Prefix `[cfx-compat-emi]`. Log at four points only: how many keys were registered, whether ControlFlex is ready, whether the compat JSON was installed or skipped (SHA-1 match), and dispatch exceptions (`catch Throwable`, warn and drop — never let the tick crash).
+
+## 9. Sequence: one press
+
+```
+Controller X
+  └─ ControlFlex BindingMapper (GUI phase, TAP)
+       ├─ GuiActionHandler.handleDynamicCompatAction("cfx_compat_emi:key.cfx_compat_emi.view_recipes")
+       └─ controlflex$setPressed(true)  →  clickCount++
+Bridge tick
+  ├─ sample isDown() / consumeClick()
+  ├─ gates: screen → EMI present → search not focused
+  ├─ EdgeDetector → fire
+  ├─ EmiScreenManager.recalculate()
+  └─ stackInteraction(EmiApi.getHoveredStack(true), b -> b == EmiConfig.viewRecipes)
+       └─ EmiApi.displayRecipes(ingredient) + focusRecipe(context)
+```
+
+## 10. Project layout and build
+
+- `settings.gradle` mirrors `cfx-compat-create`: `include 'forge', 'fabric'`, plugins `net.neoforged.moddev.legacyforge` + `fabric-loom`.
+- Both loader subprojects add `main.java.srcDir(rootProject.file('common/src/main/java'))`.
+- Dependencies:
+  - `compileOnly "com.github.ControlFlexMC:control-flex-api:${controlflex_api_version}"` (JitPack)
+  - Forge: `compileOnly fg.deobf("dev.emi:emi-forge:${emi_version}")` (from `repo.sleeping.town`)
+  - Fabric: `modCompileOnly "dev.emi:emi-fabric:${emi_version}"` plus `modLocalRuntime` for local runs
+- Key `gradle.properties` entries: `mod_id=cfx_compat_emi`, `mod_name=Control Flex x EMI`, `minecraft_version=1.20.1`, `emi_version=1.1.24+1.20.1`, `controlflex_version_range=[0.8.9,)`.
+- No mixin config, no refmap, no `mixins.json`.
+- Tests for `EdgeDetector` live in each loader's `src/test` (same trick as `cfx-compat-create`: `compileClasspath += sourceSets.main.output`).
+
+## 11. Testing and acceptance
+
+**Unit:** four `EdgeDetector` paths — held for several frames fires once, a tap spanning frames fires, no input fires nothing, two clicks in one frame fire once.
+
+**In-game acceptance (run on both Forge and Fabric):**
+
+1. ControlFlex settings show a "Control Flex x EMI" group with exactly 23 entries, no duplicates, no raw `key.cfx_compat_emi.*` strings leaking.
+2. Bind "View Recipes" to X, open the inventory, hover an item, press X → recipe screen opens.
+3. Hover a stack in EMI's sidebar, bind "Craft a stack", press once → crafting executes.
+4. Bind "Favorite", press once → the item shows up in the favorites sidebar.
+5. With the search field focused, press any action → nothing fires (same as EMI's own keys); it works again once the field loses focus.
+6. In-game (no screen), press an action → nothing happens and nothing spams the log.
+7. Launch without ControlFlex → the loader reports the missing dependency and refuses to load the bridge; no keys are registered.
+8. Uninstall the bridge and launch → no crash; the leftover names in `options.txt` are ignored.
+9. Turn EMI off in its config, or trigger a reload → nothing fires except "toggle EMI", and the log stays free of warnings.
+10. Press an action while typing in an anvil rename box or on a sign → nothing fires.
+
+## 12. Risk register
+
+| Risk | Impact | Handling |
+|---|---|---|
+| EMI changes `EmiScreenManager` / `EmiConfig` signatures | Compile error, or `NoSuchMethodError` at runtime | Bridge versions track EMI; `dispatch` wraps everything in `catch Throwable` |
+| `getHoveredStack` depends on `lastMouseX/Y` | Actions do nothing without a cursor | Accepted in v1 (ControlFlex ships a virtual cursor by default); docs say "point at the item first" |
+| Player binds with HOLD mode | Fires every tick (EMI would stack screens) | `EdgeDetector` fires only on the first frame of a hold, so this is handled |
+| ControlFlex changes GUI dispatch semantics (no more `setPressed`) | The trigger chain breaks | Acceptance case 2 is the regression sentinel; if needed, add a stable contract on the ControlFlex side |
+| 23 keys pollute `options.txt` | Leftovers after uninstall | Accepted; documented |
+| `EmiConfig.editMode` / creative gates | Actions fail silently, players get confused | Accepted in v1; v2 adds "action unavailable" feedback |
+| EMI's Forge compile coordinates are uncertain | Build gets stuck | `NeoGradle legacyforge` may not support `fg.deobf`; fall back to `dev.emi:emi-xplat-mojmap` (EMI's README lists it for MultiLoader / VanillaGradle). Verify in the very first implementation step |
+| One button bound to two EMI actions | Both execute | Same semantics ControlFlex gives every action; no dedup, documented |
+
+## 14. Review log
+
+### Round 1 (API / fact check, 2026-10-31)
+
+| ID | Finding | Action |
+|---|---|---|
+| R1.1 | `ModCompatConfig.DEFAULT_SCREEN` = `{keyMapping, screenInput}`; omitting `channels` under `screenKeys` always takes `screenInput` | D4 changed from "may" to a definite statement, with the constant cited |
+| R1.2 | `controlflex$setPressed(true)` = `setDown(true)` plus an **unconditional** `clickCount++`, so HOLD mode grows it every tick | D2 wording fixed (the earlier "increments only on transitions" was wrong); detector order fixed to "rising edge first, `clicked` as fallback" |
+| R1.3 | `processPendingGuiReleases` documents that release happens on a subsequent tick | D2 notes that the rising edge is the primary path and `consumeClick()` is the safety net |
+| R1.4 | How to wire EMI's Forge artifact is unclear (`legacyforge` vs `fg.deobf`) | Added to the risk register; the first plan task is proving dependency resolution |
+| R1.5 | ControlFlex's `KeyMappingAccessorMixin` rewrites `compareTo` to tolerate custom categories missing from `CATEGORY_SORT_ORDER` | Noted in §8.1: a directly constructed `KeyMapping` with a custom category cannot NPE on Forge, given ControlFlex is present (guaranteed by the hard dependency) |
+
+### Round 2 (design / edge cases, 2026-10-31)
+
+| ID | Finding | Action |
+|---|---|---|
+| R2.1 | Button already held before an EMI screen opens (same button opens the inventory) → phantom fire on the first frame | §8.2 adds `drainAll()` + `resetAll()` on entering an EMI screen |
+| R2.2 | Several actions firing in one frame called `recalculate()` repeatedly | At most once per frame |
+| R2.3 | With EMI disabled, still checking "EMI present" and "no focused field" would leave players unable to turn EMI back on with a controller | Gate order rewritten: `base.isEmpty()` first, `isDisabled()` passes only the toggle and skips the focus check — matching EMI's branch order |
+| R2.4 | One button bound to two EMI actions fires both | Accepted as ControlFlex's uniform semantics; no dedup, added to the risk register |
+| R2.5 | `toggleVisibility` goes through `genericInteraction` while EMI is enabled, so it is also subject to the focus gate | Noted in §8.3: that is EMI's own behaviour, not a deviation of ours |
+
+## 13. Left to the implementer
+
+- Class and method names may change, and `EmiAction`'s field split may change (as long as `common` holds no MC/EMI types).
+- The exception strategy inside `dispatch` may be refined (v1 only requires "no crash, no log spam").
+- Whether `EdgeDetector` should move into the per-loader code, if the two loaders turn out to need different sampling points.
+- Whether to log unavailable actions beyond `forward` / `back` (v1 does not).

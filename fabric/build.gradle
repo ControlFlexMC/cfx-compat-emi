@@ -1,0 +1,95 @@
+plugins {
+    id 'fabric-loom'
+}
+
+base {
+    archivesName = 'cfx-compat-emi'
+}
+
+def isRelease = project.hasProperty('release')
+def modArtifactVersion = (isRelease || !build_id) ? mod_version : "${mod_version}.${build_id}"
+version = "${modArtifactVersion}-mc${minecraft_version}-fabric"
+group = maven_group
+
+java {
+    toolchain.languageVersion = JavaLanguageVersion.of(java_version as int)
+}
+
+loom {
+    runs {
+        client {
+            client()
+            runDir 'run-fabric'
+        }
+    }
+}
+
+// The shared bridge lives in common/.
+sourceSets {
+    main {
+        java.srcDir(rootProject.file('common/src/main/java'))
+    }
+    test {
+        compileClasspath += sourceSets.main.output
+        runtimeClasspath += sourceSets.main.output
+    }
+}
+
+repositories {
+    mavenCentral()
+    maven { url 'https://jitpack.io' }
+    maven {
+        name = 'Sleeping Town'
+        url = 'https://repo.sleeping.town/'
+    }
+}
+
+dependencies {
+    minecraft "com.mojang:minecraft:${minecraft_version}"
+    mappings loom.officialMojangMappings()
+
+    modImplementation "net.fabricmc:fabric-loader:${fabric_loader_version}"
+    modImplementation "net.fabricmc.fabric-api:fabric-api:${fabric_api_version}"
+
+    // ControlFlex API (plain Java, loader-agnostic), resolved from JitPack.
+    compileOnly "com.github.ControlFlexMC:control-flex-api:${controlflex_api_version}"
+    // EMI's Fabric artifact; Loom remaps it to the project mappings (mojmap).
+    modCompileOnly "dev.emi:emi-fabric:${emi_version}"
+    modLocalRuntime "dev.emi:emi-fabric:${emi_version}"
+
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
+
+tasks.named('test', Test).configure {
+    useJUnitPlatform()
+}
+
+processResources {
+    def expandProps = [
+        'mod_id'                  : mod_id,
+        'mod_name'                : mod_name,
+        'mod_version'             : mod_version,
+        'mod_authors'             : mod_authors,
+        'mod_license'             : mod_license,
+        'mod_description'         : mod_description,
+        'minecraft_version'       : minecraft_version,
+        'fabric_loader_version'   : fabric_loader_version,
+        'java_version'            : java_version,
+        'controlflex_version_range': controlflex_version_range,
+        'emi_version_range'       : emi_version_range,
+    ]
+
+    filesMatching(['fabric.mod.json']) {
+        expand expandProps
+    }
+
+    inputs.properties(expandProps)
+}
+
+jar {
+    from(rootProject.file('LICENSE')) { rename { "${it}_${mod_id}" } }
+}
