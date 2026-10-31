@@ -6,9 +6,7 @@ base {
     archivesName = 'cfx-compat-emi'
 }
 
-def isRelease = project.hasProperty('release')
-def modArtifactVersion = (isRelease || !build_id) ? mod_version : "${mod_version}.${build_id}"
-version = "${modArtifactVersion}-mc${minecraft_version}-fabric"
+version = "${mod_version}-mc${minecraft_version}-fabric"
 group = maven_group
 
 java {

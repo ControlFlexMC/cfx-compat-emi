@@ -17,7 +17,7 @@ ControlFlex 的动态动作池来自 `mc.options.keyMappings` 扫描（`ModCompa
 
 **v1 只做「动作层」：手柄按下后，EMI 里真的发生那件事。**
 
-- 23 个 EMI 动作可在 ControlFlex 中绑定、改绑、分层；
+- 22 个 EMI 动作可在 ControlFlex 中绑定、改绑、分层；
 - 动作在 EMI 界面内正确执行（查看配方/用途、收藏、合成、隐藏、作弊取出、前进后退、搜索控制等）；
 - Forge 与 Fabric 双加载器行为一致；
 - 不需要 ControlFlex 本体做任何改动，不需要 mixin。
@@ -25,7 +25,8 @@ ControlFlex 的动态动作池来自 `mc.options.keyMappings` 扫描（`ModCompa
 ## 3. 非目标
 
 - **EMI 键位自身的改绑**：CF 里的绑定不写回 EMI 的 QDCSS 配置。玩家在 CF 里改的是「手柄哪个键触发哪个动作」，不是「EMI 的 R 键改成什么」。
-- **三个残留动作**：`defaultStack`、`deleteCursorStack`、`showCraft`。前两个是 `RecipeScreen` / `mouseReleased` 里的内联逻辑，为它们开 mixin 不划算；`showCraft` 是按住态（`isHeld()` 轮询），与其余 23 个「瞬时动作」不是同一类语义。
+- **三个残留动作**：`defaultStack`、`deleteCursorStack`、`showCraft`。前两个是 `RecipeScreen` / `mouseReleased` 里的内联逻辑，为它们开 mixin 不划算；`showCraft` 是按住态（`isHeld()` 轮询），与其余 22 个「瞬时动作」不是同一类语义。
+- **`displayAllRecipes`**：EMI 1.1.24 的源码树里有这个 `EmiBind`，但发布产物里没有（实测 25 个字段）。本桥对齐发布产物，故不暴露。
 - **表现层打磨**：guide 角标（「按 X 查看配方」）、径向菜单图标、无光标时的目标回退。留待 v2。
 - **NeoForge / 1.21**：本分支只做 1.20.1 的 forge + fabric。
 - **改动 ControlFlex 或 control-flex-api**。
@@ -35,7 +36,7 @@ ControlFlex 的动态动作池来自 `mc.options.keyMappings` 扫描（`ModCompa
 - 需要玩家手动编辑 JSON 或配置文件才能用；
 - 与 EMI 自身键位双触发（一次按下执行两遍）；
 - 在没有 EMI 的界面上按动作时抛出异常或刷屏日志；
-- 装了这个桥，但 CF 列表里出现 23 个按下去没反应的死键。
+- 装了这个桥，但 CF 列表里出现 22 个按下去没反应的死键。
 
 ## 5. 约束
 
@@ -50,7 +51,7 @@ ControlFlex 的动态动作池来自 `mc.options.keyMappings` 扫描（`ModCompa
 
 CF 的 `scanModdedKeyMappings()` 只过滤原版键名和 `key.controlflex.` 前缀，其余全部收编；`registerDynamicActions()` 会为每个键注册 `groupKey:keyName` 形式的动态动作，**不要求存在 compat JSON**。
 
-所以桥接注册 23 个 `KeyMapping` 即可让 CF 自动发现，CF 侧零改动。这是唯一不改 CF 又能出现在列表里的路径。
+所以桥接注册 22 个 `KeyMapping` 即可让 CF 自动发现，CF 侧零改动。这是唯一不改 CF 又能出现在列表里的路径。
 
 ### D2 — 用 `KeyMapping` 状态触发，而不是 `IActionStateProvider`
 
@@ -77,7 +78,7 @@ CF 的 `scanModdedKeyMappings()` 只过滤原版键名和 `key.controlflex.` 前
 
 ### D4 — 全部动作归 GUI 层
 
-EMI 只在开了界面时有意义。CF 对无配置的动态动作回落到 `MAIN` 层（`resolveDefaultLayers()` 的 `isEmpty()` 分支），GUI 相位不派发。所以必须随包安装 compat JSON，把 23 个键全部写进 `screenKeys`，并显式声明 `channels: ["keyMapping"]`。`ModCompatConfig.DEFAULT_SCREEN` 就是 `{keyMapping, screenInput}` —— 不声明的话 CF 一定会走 `screenInput` 通道，把 `UNKNOWN_KEY`（键码 -1）送进 `screen.keyPressed`。
+EMI 只在开了界面时有意义。CF 对无配置的动态动作回落到 `MAIN` 层（`resolveDefaultLayers()` 的 `isEmpty()` 分支），GUI 相位不派发。所以必须随包安装 compat JSON，把 22 个键全部写进 `screenKeys`，并显式声明 `channels: ["keyMapping"]`。`ModCompatConfig.DEFAULT_SCREEN` 就是 `{keyMapping, screenInput}` —— 不声明的话 CF 一定会走 `screenInput` 通道，把 `UNKNOWN_KEY`（键码 -1）送进 `screen.keyPressed`。
 
 ### D5 — 键位用自有命名空间
 
@@ -85,10 +86,11 @@ EMI 只在开了界面时有意义。CF 对无配置的动态动作回落到 `MA
 
 改用 `key.cfx_compat_emi.<action>` + 自带中英语言文件（23 条 + 1 条分类，成本可忽略）。分类同样用自有 key `key.categories.cfx_compat_emi`，CF 的 `deriveGroupKey()` 第 ③ 条规则会把它归到 `cfx_compat_emi` 这个 modId，显示名取 mod 列表里的 "Control Flex x EMI"。
 
-### D6 — `common` 只放映射无关的代码
+### D6 — `common` 承载全部映射相关代码（实现期修正）
 
-`common` 允许存在：CF API 插件类、动作 id 常量表、边沿检测状态机、纯函数门禁。
-`common` 禁止存在：任何 `net.minecraft.*`、任何 `dev.emi.*`。真正的 EMI 调用在两个 loader 各写一份（文本高度相似，是刻意的：编译期类型安全 > 少写 200 行）。
+原计划是「`common` 只放映射无关代码，EMI 调用在两个 loader 各写一份」。**实现时前提不成立**：Fabric 侧用的是 `loom.officialMojangMappings()`（与 `cfx-compat-create` 一致），两个加载器编译出的 MC / EMI 类型名完全相同，写两份既无收益又容易漂移。
+
+最终结构：`common` 放 `EmiKeys` / `EmiDispatch` / `EmiTicker`（含 EMI 与 MC 类型），per-loader 只剩注册与 tick 接线（各约 25 行）。代价是 `common` 与映射绑定：若将来某个加载器改用 Yarn，需要把这三个文件搬回各自 loader。
 
 ### D7 — 门禁按 EMI 的判定复刻，不自作主张
 
@@ -121,23 +123,26 @@ cfx-compat-emi/
 ├── common/src/main/java/com/ifels/cfx/emi/
 │   ├── CfxEmiPlugin.java           IControlFlexPlugin：导出 compat JSON
 │   ├── EmiAction.java              动作表（id / bindKey / kind）
-│   ├── ActionKind.java             STACK / GENERIC / RECIPE / API
-│   └── EdgeDetector.java           按下/点击去重状态机（纯 Java）
+│   ├── ActionKind.java             STACK / STACK_THEN_RECIPE / RECIPE / GENERIC
+│   ├── EdgeDetector.java           按下/点击去重状态机（纯 Java）
+│   ├── EmiKeys.java                22 个 KeyMapping + 查找表
+│   ├── EmiDispatch.java            EmiConfig / EmiScreenManager 调用（谓词分发）
+│   └── EmiTicker.java              每帧采样 + 门禁 + 触发
+├── common/src/main/resources/
+│   ├── assets/cfx_compat_emi/compat/cfx_compat_emi.json
+│   ├── assets/cfx_compat_emi/lang/{en_us,zh_cn}.json
+│   └── META-INF/services/com.ifels.controlflex.api.IControlFlexPlugin
 ├── forge/src/main/java/com/ifels/cfx/emi/forge/
-│   ├── CfxEmiMod.java              模组入口：注册键位 + ClientTickEvent.Post
-│   ├── ForgeKeyRegistration.java   23 个 KeyMapping（Mojmap）
-│   └── ForgeEmiDispatch.java       EmiConfig / EmiScreenManager / EmiApi 调用
+│   └── CfxEmiMod.java              @Mod：RegisterKeyMappingsEvent + ClientTickEvent.Post
 └── fabric/src/main/java/com/ifels/cfx/emi/fabric/
-    ├── CfxEmiMod.java              ClientModInitializer：KeyBindingHelper + END_CLIENT_TICK
-    ├── FabricKeyRegistration.java  同上（Yarn）
-    └── FabricEmiDispatch.java      同上（Yarn）
+    └── CfxEmiMod.java              ClientModInitializer：KeyBindingHelper + END_CLIENT_TICK
 ```
 
 ### 7.1 `CfxEmiPlugin`（common）
 
 实现 `IControlFlexPlugin`，只做一件事：`onInstallCompatConfigs(ICompatAssetInstaller)` 里把 `/assets/cfx_compat_emi/compat/cfx_compat_emi.json` 安装成 `mods/cfx_compat_emi.json`。
 
-抄 `cfx-compat-epicfight` 的 `CompatConfigInstaller`：读 classpath 字节 → 与 `mods/` 下现有文件做 SHA-1 比对 → 不一致或缺失才覆盖，避免每次启动重写用户盘上的文件。
+实现说明：v1 直接调用 `installer.install(...)`，没有抄 epicfight 的 SHA-1 比对，因此 CF 每次启动都会重写一份同内容文件。可接受（几十字节、无副作用），若将来文件变大再加 `needsOverwrite` 门。
 
 `getModId()` 返回 `cfx_compat_emi`；`onControlFlexReady()` 只打一行日志（v1 不需要 CF 的任何运行时服务）。
 
@@ -145,7 +150,7 @@ SPI 注册文件：`META-INF/services/com.ifels.controlflex.api.IControlFlexPlug
 
 ### 7.2 `EmiAction`（common）
 
-一个枚举，23 个条目，字段：
+一个枚举，22 个条目，字段：
 
 | 字段 | 说明 |
 |---|---|
@@ -177,7 +182,7 @@ public boolean update(boolean isDown, boolean clicked) {
 
 ### 8.1 键位注册
 
-- 23 个 `KeyMapping`，name = `key.cfx_compat_emi.<bindKey 转 snake_case>`，category = `key.categories.cfx_compat_emi`，默认键 = `InputConstants.UNKNOWN_KEY`（`InputConstants.UNKNOWN`）。
+- 22 个 `KeyMapping`，name = `key.cfx_compat_emi.<bindKey 转 snake_case>`，category = `key.categories.cfx_compat_emi`，默认键 = `InputConstants.UNKNOWN_KEY`（`InputConstants.UNKNOWN`）。
 - 默认键为空是刻意的：伪键位若绑了真实键，玩家直接敲键盘也会触发，且可能与 EMI 自身绑定双触发。
 - **`controlflex` 由加载器保证在位**（D8），运行期不再判断 `isModLoaded`；模组本身是 client-only，不需要额外分发。
 - 注册时机：Forge `RegisterKeyMappingsEvent`；Fabric `KeyBindingHelper.registerKeyBinding`（`ClientModInitializer`）。
@@ -217,8 +222,8 @@ for (EmiAction action : fire) dispatch(action);      // 见 8.4
 
 三个辅助动作：
 
-- `drainAll()`：对 23 个键各调一次 `consumeClick()`，防止在非 EMI 界面里的点击滞留到下次打开 EMI 时集中触发。
-- `resetAll()`：把 23 个 `EdgeDetector` 的 `lastDown` 复位。**这一条是必需的**：手柄键在打开界面前就按着的话（比如用同一个键开背包），第一帧会看到 `isDown == true` 而 `lastDown == false`，产生一次虚假触发。
+- `drainAll()`：对 22 个键各调一次 `consumeClick()`，防止在非 EMI 界面里的点击滞留到下次打开 EMI 时集中触发。
+- `resetAll()`：把 22 个 `EdgeDetector` 的 `lastDown` 复位。**这一条是必需的**：手柄键在打开界面前就按着的话（比如用同一个键开背包），第一帧会看到 `isDown == true` 而 `lastDown == false`，产生一次虚假触发。
 - `recalculate()` 每帧最多调一次，不放在循环里。
 
 ### 8.3 门禁
@@ -244,37 +249,37 @@ for (EmiAction action : fire) dispatch(action);      // 见 8.4
 | `STACK_THEN_RECIPE` | 先 `STACK`；返回 false 且 `resolveRecipeContext(hovered) != null` 时再 `recipeInteraction(ctx, ...)`（`favorite` 用） |
 | `RECIPE` | `EmiScreenManager.recipeInteraction(resolveRecipeContext(hovered), b -> b == EmiConfig.<bindKey>)`，其中 `resolveRecipeContext` 按 D9 先取 `hovered.getRecipeContext()`、再退回 `EmiApi.getRecipeContext(hovered.getStack())` |
 | `GENERIC` | `EmiScreenManager.genericInteraction(b -> b == EmiConfig.<bindKey>)` |
-| `API` | `EmiApi.displayAllRecipes()`（`displayAllRecipes` 用；EMI 自己在 `keyPressed` 里也是直调） |
+
+> **实现修正**：v1 没有 `API` 类。EMI 1.1.24 的发布产物里没有 `displayAllRecipes` 这个 `EmiBind`（源码树里有，发布版没有），所以「显示全部配方」不在动作表内；`EmiApi.displayAllRecipes()` 仍然存在，但不在本桥的 v1 范围。
 
 所有调用都在客户端主线程、渲染/事件线程安全的上下文里执行。返回值忽略（v1 不做「动作失败」的 UI 反馈）。
 
-### 8.5 动作表（23 项）
+### 8.5 动作表（22 项）
 
 | # | bindKey | kind | 备注 |
 |---|---|---|---|
 | 1 | `toggleVisibility` | GENERIC | 开关 EMI |
 | 2 | `focusSearch` | GENERIC | |
 | 3 | `clearSearch` | GENERIC | |
-| 4 | `displayAllRecipes` | API | |
-| 5 | `viewRecipes` | STACK | |
-| 6 | `viewUses` | STACK | |
-| 7 | `favorite` | STACK_THEN_RECIPE | 物品级失败后退到配方级 |
-| 8 | `viewStackTree` | STACK | 需要 `recipeContext` |
-| 9 | `viewTree` | GENERIC | |
-| 10 | `back` | GENERIC | |
-| 11 | `forward` | GENERIC | |
-| 12 | `craftOne` | STACK | 侧栏物品才有意义 |
-| 13 | `craftAll` | STACK | 同上 |
-| 14 | `craftOneToInventory` | STACK | 同上 |
-| 15 | `craftAllToInventory` | STACK | 同上 |
-| 16 | `craftOneToCursor` | STACK | 同上 |
-| 17 | `cheatOneToInventory` | STACK | 创造模式 |
-| 18 | `cheatStackToInventory` | STACK | 创造模式 |
-| 19 | `cheatOneToCursor` | STACK | 创造模式 |
-| 20 | `cheatStackToCursor` | STACK | 创造模式 |
-| 21 | `hideStack` | STACK | 需 `EmiConfig.editMode` |
-| 22 | `hideStackById` | STACK | 同上 |
-| 23 | `copyId` | RECIPE | 配方页与收藏项都可用（D9） |
+| 4 | `viewRecipes` | STACK | |
+| 5 | `viewUses` | STACK | |
+| 6 | `favorite` | STACK_THEN_RECIPE | 物品级失败后退到配方级 |
+| 7 | `viewStackTree` | STACK | 需要 `recipeContext` |
+| 8 | `viewTree` | GENERIC | |
+| 9 | `back` | GENERIC | |
+| 10 | `forward` | GENERIC | |
+| 11 | `craftOne` | STACK | 侧栏物品才有意义 |
+| 12 | `craftAll` | STACK | 同上 |
+| 13 | `craftOneToInventory` | STACK | 同上 |
+| 14 | `craftAllToInventory` | STACK | 同上 |
+| 15 | `craftOneToCursor` | STACK | 同上 |
+| 16 | `cheatOneToInventory` | STACK | 创造模式 |
+| 17 | `cheatStackToInventory` | STACK | 创造模式 |
+| 18 | `cheatOneToCursor` | STACK | 创造模式 |
+| 19 | `cheatStackToCursor` | STACK | 创造模式 |
+| 20 | `hideStack` | STACK | 需 `EmiConfig.editMode` |
+| 21 | `hideStackById` | STACK | 同上 |
+| 22 | `copyId` | RECIPE | 配方页与收藏项都可用（D9） |
 
 ### 8.6 compat JSON
 
@@ -303,12 +308,12 @@ for (EmiAction action : fire) dispatch(action);      // 见 8.4
 
 - `mod_id` 必须是 `cfx_compat_emi`（= groupKey），否则 `resolveCompatDefaultLayers()` 查不到配置，全部动作回落 MAIN 层。
 - `channels: ["keyMapping"]` 显式声明，避免 CF 走 `screenInput` 通道把 `UNKNOWN_KEY` 送进 `screen.keyPressed`。
-- 不使用 `ignoreKeys`：23 个键全部有实现，没有需要隐藏的。
+- 不使用 `ignoreKeys`：22 个键全部有实现，没有需要隐藏的。
 - 不加 `dependencies`：这份配置就是给桥接自己的。
 
 ### 8.7 语言资源
 
-`assets/cfx_compat_emi/lang/en_us.json` 与 `zh_cn.json`：23 个动作名 + `key.categories.cfx_compat_emi`。文案对齐 EMI 官方用词（"View Recipes" / "查看配方"），便于玩家在 EMI 自己的 Binds 页面对照。
+`assets/cfx_compat_emi/lang/en_us.json` 与 `zh_cn.json`：22 个动作名 + `key.categories.cfx_compat_emi`。文案对齐 EMI 官方用词（"View Recipes" / "查看配方"），便于玩家在 EMI 自己的 Binds 页面对照。
 
 ### 8.8 版本门控
 
@@ -338,7 +343,8 @@ for (EmiAction action : fire) dispatch(action);      // 见 8.4
 ## 10. 工程结构与构建
 
 - `settings.gradle` 照 `cfx-compat-create`：`include 'forge', 'fabric'`，插件 `net.neoforged.moddev.legacyforge` + `fabric-loom`。
-- 两个 loader 子工程都 `main.java.srcDir(rootProject.file('common/src/main/java'))`。
+- 两个 loader 子工程都把 `common` 收进自己的 source set：`main.java.srcDir(rootProject.file('common/src/main/java'))` + `main.resources.srcDir(rootProject.file('common/src/main/resources'))`。资源只维护一份，避免 JSON 与语言文件漂移。
+- Fabric 侧用 `fabric-loom 1.7-SNAPSHOT`（EMI 产物要求 ≥1.7.435），Forge 侧 `net.neoforged.moddev.legacyforge 2.0.141`。
 - 依赖：
   - `compileOnly "com.github.ControlFlexMC:control-flex-api:${controlflex_api_version}"`（JitPack）
   - Forge：`compileOnly fg.deobf("dev.emi:emi-forge:${emi_version}")`（`repo.sleeping.town`）
@@ -353,7 +359,7 @@ for (EmiAction action : fire) dispatch(action);      // 见 8.4
 
 **游戏内验收（Forge + Fabric 各跑一遍）**：
 
-1. CF 设置里出现分组 "Control Flex x EMI"，恰好 23 个条目，无重复、无 `key.cfx_compat_emi.*` 原始键名泄漏。
+1. CF 设置里出现分组 "Control Flex x EMI"，恰好 22 个条目，无重复、无 `key.cfx_compat_emi.*` 原始键名泄漏。
 2. 绑定「查看配方」到 X，打开背包指向物品按 X → 打开配方页。
 3. 指向 EMI 侧栏物品，绑定「合成一组」按一下 → 合成执行。
 4. 绑定「收藏」按一下 → 侧栏收藏出现该物品。
@@ -372,7 +378,7 @@ for (EmiAction action : fire) dispatch(action);      // 见 8.4
 | `getHoveredStack` 依赖 `lastMouseX/Y` | 无光标时动作无效 | v1 接受（CF 手柄默认带虚拟光标）；文档写明「先指到物品再按」 |
 | 玩家用 HOLD 模式绑定 | 每个 tick 都会 fire（EMI 会连开多层界面） | `EdgeDetector` 已在按住态只触发首帧，天然免疫 |
 | CF 未来改 GUI 派发语义（不再 `setPressed`） | 触发链断掉 | 验收用例 2 是回归哨兵；必要时在 CF 侧加一条稳定契约 |
-| 23 个键污染 `options.txt` | 卸载后残留 | 可接受；文档说明 |
+| 22 个键污染 `options.txt` | 卸载后残留 | 可接受；文档说明 |
 | `EmiConfig.editMode` / 创造模式门禁 | 动作静默失败，玩家困惑 | v1 接受；v2 做「动作不可用」的提示 |
 | Forge 侧 EMI 编译坐标不确定 | 构建卡住 | `NeoGradle legacyforge` 未必支持 `fg.deobf`；退路是 `dev.emi:emi-xplat-mojmap`（EMI README 给 MultiLoader / VanillaGradle 的方案）。实现第一步就验证 |
 | 同一按钮绑两个 EMI 动作 | 两个都执行 | 与 CF 对所有动作的语义一致，不做去重；文档说明 |
@@ -398,6 +404,18 @@ for (EmiAction action : fire) dispatch(action);      // 见 8.4
 | R2.3 | 关闭态（`isDisabled()`）下若仍检查「EMI 在场」与「输入框聚焦」，玩家无法用开关重新打开 EMI | 重排门禁：`base.isEmpty()` 在最前，`isDisabled()` 只放行开关且跳过聚焦检查，与 EMI 源码分支顺序一致 |
 | R2.4 | 同一按钮绑两个 EMI 动作会双触发 | 视为 CF 统一语义，不去重，写入风险表 |
 | R2.5 | `toggleVisibility` 在 EMI 开启时走 `genericInteraction`，因此同样受聚焦门禁约束 | 在 §8.3 注明：这是 EMI 自身行为，不是我们的偏差 |
+
+### 第三轮（实现期核对，2026-10-31）
+
+| 编号 | 发现 | 处置 |
+|---|---|---|
+| R3.1 | EMI **1.1.24 发布产物**里只有 25 个 `EmiBind`，没有 `displayAllRecipes`（`research/emi` 源码树比发布版新） | 动作表 26 → 25 → 22；删除 `DISPLAY_ALL_RECIPES` 与 `ActionKind.API`，JSON / lang / 测试同步 |
+| R3.2 | `EmiBind` 在 `dev.emi.emi.input`，不在 `.config` | 修正 import |
+| R3.3 | Mojmap 1.20.1 没有 `ParentElement`，元素树接口是 `ContainerEventHandler` | `hasFocusedTextField` 改为 `Screen.children()` + `ContainerEventHandler` 递归 |
+| R3.4 | 1.20.1 的 `KeyMapping` 构造器只接受 `int` 键码 | 用 `InputConstants.UNKNOWN.getValue()` |
+| R3.5 | `compileOnly` 不会进入 `testCompileClasspath`，插件测试编译失败 | 两个 loader 都加 `testImplementation control-flex-api` |
+| R3.6 | EMI 的 Fabric 产物用 Loom 1.7.435 构建，Loom 1.6 拒绝配置 | `settings.gradle` 升到 `fabric-loom 1.7-SNAPSHOT` |
+| R3.7 | 两个 loader 都是 Mojmap，per-loader 复制分发逻辑已无必要 | D6 改为 common 持有 `EmiKeys` / `EmiDispatch` / `EmiTicker`，per-loader 只剩接线 |
 
 ## 13. 留给实现者的决定
 
