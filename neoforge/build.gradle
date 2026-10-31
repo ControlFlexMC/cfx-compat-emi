@@ -1,0 +1,101 @@
+plugins {
+    id 'net.neoforged.moddev'
+}
+
+base {
+    archivesName = 'cfx-compat-emi'
+}
+
+version = "${mod_version}-mc${minecraft_version}-neoforge"
+group = maven_group
+
+java {
+    toolchain.languageVersion = JavaLanguageVersion.of(java_version as int)
+}
+
+neoForge {
+    version = neoforge_version
+
+    runs {
+        client {
+            client()
+        }
+    }
+
+    mods {
+        "${mod_id}" {
+            sourceSet sourceSets.main
+        }
+    }
+}
+
+// The shared bridge lives in common/, tests included — both loaders run the same suite.
+sourceSets {
+    main {
+        java.srcDir(rootProject.file('common/src/main/java'))
+        resources.srcDir(rootProject.file('common/src/main/resources'))
+    }
+    test {
+        java.srcDir(rootProject.file('common/src/test/java'))
+        compileClasspath += sourceSets.main.output
+        runtimeClasspath += sourceSets.main.output
+    }
+}
+
+repositories {
+    mavenCentral()
+    maven { url 'https://jitpack.io' }
+    maven {
+        name = 'Sleeping Town'
+        url = 'https://repo.sleeping.town/'
+    }
+}
+
+dependencies {
+    // ControlFlex API (plain Java, loader-agnostic), resolved from JitPack.
+    compileOnly "com.github.ControlFlexMC:control-flex-api:${controlflex_api_version}"
+    // EMI's NeoForge artifact.
+    compileOnly "dev.emi:emi-neoforge:${emi_version}"
+
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
+    testImplementation 'org.slf4j:slf4j-api:2.0.9'
+    // compileOnly does not reach the test classpath; the plugin test needs the API.
+    testImplementation "com.github.ControlFlexMC:control-flex-api:${controlflex_api_version}"
+}
+
+tasks.withType(JavaCompile).configureEach {
+    options.encoding = 'UTF-8'
+}
+
+tasks.named('test', Test).configure {
+    useJUnitPlatform()
+}
+
+processResources {
+    def expandProps = [
+        'mod_id'                   : mod_id,
+        'mod_name'                 : mod_name,
+        'mod_version'              : mod_version,
+        'mod_authors'              : mod_authors,
+        'mod_license'              : mod_license,
+        'mod_description'          : mod_description,
+        'minecraft_version'        : minecraft_version,
+        'minecraft_version_range'  : minecraft_version_range,
+        'neoforge_version_range'   : neoforge_version_range,
+        'neoforge_loader_range'    : neoforge_loader_range,
+        'controlflex_mod_id'       : controlflex_mod_id,
+        'controlflex_version_range_neoforge': controlflex_version_range_neoforge,
+        'emi_mod_id'               : emi_mod_id,
+        'emi_version_range_neoforge': emi_version_range_neoforge,
+    ]
+
+    filesMatching(['pack.mcmeta', 'META-INF/neoforge.mods.toml']) {
+        expand expandProps
+    }
+
+    inputs.properties(expandProps)
+}
+
+jar {
+    from(rootProject.file('LICENSE')) { rename { "${it}_${mod_id}" } }
+}

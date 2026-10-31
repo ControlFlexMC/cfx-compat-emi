@@ -3,8 +3,8 @@
 ControlFlex bridge mod for [EMI](https://modrinth.com/mod/emi). Exposes EMI's actions as bindable
 ControlFlex actions, so a controller can drive the recipe viewer without touching a keyboard.
 
-Requires **Minecraft 1.21.1**, **ControlFlex ≥ 0.8.9** and **EMI** (1.1.x). This branch is
-**Fabric only** — 1.21.1 has no Forge, and the NeoForge build is not part of it.
+Requires **Minecraft 1.21.1**, **ControlFlex ≥ 0.8.9** and **EMI** (1.1.x). Both **Fabric** and
+**NeoForge** are supported from the same sources; 1.21.1 has no Forge, so there is no Forge build.
 
 ## What it does
 
@@ -53,12 +53,15 @@ search bar), or while EMI is switched off or reloading, nothing fires except "To
 ## Building
 
 ```bash
-./gradlew :fabric:build
+./gradlew build                 # both loaders
+./gradlew :fabric:build         # or just one
+./gradlew :neoforge:build
 ```
 
-The jar lands in `fabric/build/libs`. Sources compile against official Mojang mappings; Fabric uses
-Loom 1.7 (EMI's artifact is built with it). Gradle 8.8 runs on JDK 17–22 only — if your default JDK
-is newer, export `JAVA_HOME` pointing at a supported one before invoking the wrapper.
+Jars land in `fabric/build/libs` and `neoforge/build/libs`. Sources compile against official Mojang
+mappings on both loaders (Fabric uses Loom 1.7, NeoForge uses ModDevGradle). Gradle 8.8 runs on
+JDK 17–22 only — if your default JDK is newer, export `JAVA_HOME` pointing at a supported one
+before invoking the wrapper.
 
 ## Licence
 

@@ -1,9 +1,12 @@
 # Changelog
 
-## 0.1.0 — MC 1.21.1 (Fabric)
+## 0.1.0 — MC 1.21.1 (Fabric + NeoForge)
 
-- Same 22 EMI actions as the 1.20.1 branch, ported to 1.21.1 / Java 21. Fabric only: 1.21.1 has no
-  Forge, and NeoForge is not part of this branch.
+- Same 22 EMI actions as the 1.20.1 branch, ported to 1.21.1 / Java 21, now on Fabric **and**
+  NeoForge (1.21.1 has no Forge). Both loaders compile the same `common/` sources and run the same
+  18-test suite.
+- NeoForge wiring takes both event buses from the `ModContainer` injected into the `@Mod`
+  constructor, avoiding 21.1's deprecated `@EventBusSubscriber(bus = …)`.
 - `displayAllRecipes` is still absent from EMI's released `EmiConfig`, so the action table stays 22.
 
 ## 0.1.0 — MC 1.20.1 (Forge + Fabric)

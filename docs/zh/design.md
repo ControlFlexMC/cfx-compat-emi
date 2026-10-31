@@ -1,9 +1,10 @@
 # Control Flex × EMI 兼容桥 — 设计文档
 
 > **分支说明（1.21.1）**：本文最初为 1.20.1 分支所写，1.21.1 分支沿用同一套架构，差异只有三条：
-> ① 只做 Fabric（1.21.1 没有 Forge，NeoForge 未纳入本分支）；② 目标是 MC 1.21.1 / Java 21；
+> ① 加载器是 **Fabric + NeoForge**（1.21.1 没有 Forge）；② 目标是 MC 1.21.1 / Java 21；
 > ③ EMI 为 `1.1.24+1.21.1`，发布产物同样是 25 个 `EmiBind`（没有 `displayAllRecipes`），动作数仍是 22。
-> 文中的 Forge 相关内容（`mods.toml`、`RegisterKeyMappingsEvent`、Maven 区间）在 1.21.1 分支上不适用。
+> 文中以 Forge 为名的部分（`mods.toml`、`net.minecraftforge.*` 事件）在 1.21.1 上对应 `neoforge.mods.toml`
+> 与 `net.neoforged.neoforge.client.event.*`；事件总线改由 `@Mod` 构造器注入的 `ModContainer` 取得。
 
 - 项目：`cfx-compat-emi`
 - 目标版本：Minecraft 1.20.1 / Forge 47.x + Fabric 0.15.x

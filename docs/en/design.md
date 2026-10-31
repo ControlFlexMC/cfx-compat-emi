@@ -1,10 +1,12 @@
 # Control Flex × EMI Compat Bridge — Design
 
 > **Branch note (1.21.1):** this document was written for the 1.20.1 branch. 1.21.1 keeps the same
-> architecture and differs in three ways: (1) Fabric only — 1.21.1 has no Forge, and NeoForge is not
-> part of this branch; (2) MC 1.21.1 / Java 21; (3) EMI is `1.1.24+1.21.1`, whose release also ships
-> 25 `EmiBind` fields (no `displayAllRecipes`), so the action count stays 22. Forge-specific
-> sections (`mods.toml`, `RegisterKeyMappingsEvent`, Maven ranges) do not apply on this branch.
+> architecture and differs in three ways: (1) the loaders are **Fabric + NeoForge** (1.21.1 has no
+> Forge); (2) MC 1.21.1 / Java 21; (3) EMI is `1.1.24+1.21.1`, whose release also ships 25
+> `EmiBind` fields (no `displayAllRecipes`), so the action count stays 22. Where this document says
+> Forge (`mods.toml`, `net.minecraftforge.*` events), 1.21.1 means `neoforge.mods.toml` and
+> `net.neoforged.neoforge.client.event.*`, with both buses taken from the `ModContainer` injected
+> into the `@Mod` constructor.
 
 - Project: `cfx-compat-emi`
 - Targets: Minecraft 1.20.1 / Forge 47.x + Fabric 0.15.x
