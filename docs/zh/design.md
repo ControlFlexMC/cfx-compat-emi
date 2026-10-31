@@ -112,7 +112,9 @@ CF 的哲学是「手柄按键是命令，不是输入」（必要时先让输�
 
 `EmiApi.getRecipeContext(EmiIngredient)` 只对 `EmiFavorite` 返回非空，直接用它会让 `copyId` 在配方页上变成死键。而 `EmiStackInteraction.getRecipeContext()` 是 public 的，配方页悬停槽位、侧栏收藏项都返回非空。
 
-故 `RECIPE` 类动作的上下文解析顺序：先 `hovered.getRecipeContext()`，为 null 时退回 `EmiApi.getRecipeContext(hovered.getStack())`。这是对 EMI 的**刻意超集**（EMI 自己在配方页走 `RecipeScreen` 的 `group.recipe`，那是私有字段，无 mixin 够不到），效果是 `copyId` 在配方页与收藏项上都可用。
+故 `RECIPE` 类动作的上下文解析顺序：先 `hovered.getRecipeContext()`，为 null 时退回 `EmiApi.getRecipeContext(hovered.getStack())`。
+
+**实测修正**：只有侧栏收藏项（以及带 recipe context 的合成结果槽）能给出非空上下文。配方页 `RecipeScreen` 不是 `HandledScreen`，`EmiApi.getHoveredStack()` 在那里拿到的是 `lastStackTooltipRendered` 兜底，recipe 为 null；EMI 自己在配方页用的是私有的 `group.recipe`，无 mixin 够不到。因此 **`copyId` 在配方页是空操作**，v1 接受并在 README 说明。
 
 ## 7. 架构
 
@@ -233,9 +235,9 @@ for (EmiAction action : fire) dispatch(action);      // 见 8.4
 | 门禁 | 判据 | 理由 |
 |---|---|---|
 | 有界面 | `mc.screen != null` | EMI 只在屏幕内工作 |
-| EMI 在场 | `!EmiScreenBase.getCurrent().isEmpty()` | 等价于 `keyPressed` 的前两行（`base.isEmpty()` 直接 return false，关闭态也一样） |
+| EMI 在场 | `!EmiScreenBase.getCurrent().isEmpty()`，或当前界面是 `BoMScreen`（配方树） | `keyPressed` 前两行即 `base.isEmpty()` 返回 false；配方树不走 `EmiScreenBase.of()`，必须单列，否则从配方树里连「返回」都按不出来 |
 | EMI 就绪 | `EmiScreenManager.isDisabled()` 为真时只放行 `toggleVisibility`，其余丢弃 | 复刻分支顺序：关闭 / 重载中只有开关能按，否则玩家没法用手柄把 EMI 重新打开 |
-| 无输入框聚焦 | 屏幕元素树内不存在 `isActive() && visible` 的 `TextFieldWidget` | 复刻 `hasFocusedTextField(screen, 10)`；**关闭态不检查这一条**（EMI 的 disabled 分支在聚焦检查之前） |
+| 无输入框聚焦 | 屏幕元素树内不存在 `isActive() && visible` 的 `TextFieldWidget`，且 `EmiApi.isSearchFocused()` 为假 | EMI 的搜索框是手工渲染的，**不在元素树里**，只走树扫描会漏掉它 |
 
 四个门禁与 EMI 自身键位的行为一致（见 D7）。`EmiApi.isSearchFocused()` 不再单独使用：EMI 搜索框本身就是元素树里的 `TextFieldWidget`，已被第四条覆盖。
 
@@ -279,7 +281,7 @@ for (EmiAction action : fire) dispatch(action);      // 见 8.4
 | 19 | `cheatStackToCursor` | STACK | 创造模式 |
 | 20 | `hideStack` | STACK | 需 `EmiConfig.editMode` |
 | 21 | `hideStackById` | STACK | 同上 |
-| 22 | `copyId` | RECIPE | 配方页与收藏项都可用（D9） |
+| 22 | `copyId` | RECIPE | 仅侧栏收藏项等有 recipe 上下文的场合（D9） |
 
 ### 8.6 compat JSON
 
@@ -416,6 +418,18 @@ for (EmiAction action : fire) dispatch(action);      // 见 8.4
 | R3.5 | `compileOnly` 不会进入 `testCompileClasspath`，插件测试编译失败 | 两个 loader 都加 `testImplementation control-flex-api` |
 | R3.6 | EMI 的 Fabric 产物用 Loom 1.7.435 构建，Loom 1.6 拒绝配置 | `settings.gradle` 升到 `fabric-loom 1.7-SNAPSHOT` |
 | R3.7 | 两个 loader 都是 Mojmap，per-loader 复制分发逻辑已无必要 | D6 改为 common 持有 `EmiKeys` / `EmiDispatch` / `EmiTicker`，per-loader 只剩接线 |
+
+### 第四轮（整分支评审，2026-10-31）
+
+| 编号 | 发现 | 处置 |
+|---|---|---|
+| R4.1 | **EMI 搜索框不在屏幕元素树里**（`addWidgets()` 只定位不挂 child），元素树扫描永远看不到它 → 聚焦后 22 个动作照发 | 门禁补 `EmiApi.isSearchFocused()`，抽成 `EmiGate.focusBlocks(...)`，7 条单测 |
+| R4.2 | 配方树 `BoMScreen` 不进 `EmiScreenBase.of()`，进去之后连「返回」都失效 | 门禁加 `BoMScreen` 例外，抽成 `EmiGate.emiScreenActive(...)` |
+| R4.3 | 进屏首帧只跳过一帧；HOLD 绑定在第二帧仍会误触（当时靠 CF 的抑制兜底） | `EdgeDetector.seed()` 记录真实按下状态，进屏帧只 seed 不触发 |
+| R4.4 | `recalculate()` 在 try 之外，且 EMI 重载时也会调用 | 移入 try，且只在 `!disabled` 时调用 |
+| R4.5 | 干净克隆无法构建：wrapper jar 被 `*.jar` 忽略；`org.gradle.java.home` 写死本机路径 | `.gitignore` 放行 `gradle/wrapper/gradle-wrapper.jar`；属性改成注释，README 说明 JAVA_HOME |
+| R4.6 | `copyId` 在配方页拿不到 recipe 上下文（`RecipeScreen` 不是 `HandledScreen`） | 不改代码，D9 / 动作表 / README 改为「仅侧栏收藏项等」 |
+| R4.7 | §8.9 的日志点只实现 1/4（安装结果被丢弃、无 ready 行） | 插件记录安装失败与 ready 行 |
 
 ## 13. 留给实现者的决定
 

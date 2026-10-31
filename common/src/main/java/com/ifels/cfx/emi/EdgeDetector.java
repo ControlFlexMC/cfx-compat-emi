@@ -22,4 +22,12 @@ public final class EdgeDetector {
     public void reset() {
         lastDown = false;
     }
+
+    /**
+     * Records the current state without firing, so a button that was already held when a screen
+     * opened cannot produce a phantom press on the next frame.
+     */
+    public void seed(boolean isDown) {
+        lastDown = isDown;
+    }
 }

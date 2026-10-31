@@ -2,6 +2,8 @@ package com.ifels.cfx.emi;
 
 import com.ifels.controlflex.api.ICompatAssetInstaller;
 import com.ifels.controlflex.api.IControlFlexPlugin;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * ControlFlex SPI entry point for cfx-compat-emi.
@@ -9,11 +11,13 @@ import com.ifels.controlflex.api.IControlFlexPlugin;
  * <p>Registered via
  * {@code META-INF/services/com.ifels.controlflex.api.IControlFlexPlugin}.</p>
  *
- * <p>Installs the bundled compat config, which is what moves the 23 pseudo key mappings into
+ * <p>Installs the bundled compat config, which is what moves the 22 pseudo key mappings into
  * ControlFlex's GUI layer. Without it they would fall back to the MAIN layer and never be
  * dispatched while a screen is open (spec §D4).</p>
  */
 public final class CfxEmiPlugin implements IControlFlexPlugin {
+
+    private static final Logger LOGGER = LoggerFactory.getLogger("cfx-compat-emi");
 
     public static final String MOD_ID = "cfx_compat_emi";
     public static final String COMPAT_FILE_NAME = "cfx_compat_emi.json";
@@ -27,6 +31,16 @@ public final class CfxEmiPlugin implements IControlFlexPlugin {
 
     @Override
     public void onInstallCompatConfigs(ICompatAssetInstaller installer) {
-        installer.install(COMPAT_RESOURCE, COMPAT_FILE_NAME);
+        if (!installer.install(COMPAT_RESOURCE, COMPAT_FILE_NAME)) {
+            LOGGER.warn("[cfx-compat-emi] failed to install {} — the {} actions will stay on the "
+                    + "MAIN layer and never fire while a screen is open",
+                    COMPAT_FILE_NAME, EmiAction.values().length);
+        }
+    }
+
+    @Override
+    public void onControlFlexReady() {
+        LOGGER.info("[cfx-compat-emi] ControlFlex ready; {} EMI actions available",
+                EmiAction.values().length);
     }
 }

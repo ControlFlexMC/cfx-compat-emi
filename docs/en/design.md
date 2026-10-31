@@ -112,7 +112,9 @@ The bridge is meaningless without ControlFlex, so follow the ecosystem conventio
 
 `EmiApi.getRecipeContext(EmiIngredient)` only returns non-null for `EmiFavorite`, so using it alone turns `copyId` into a dead key on recipe screens. `EmiStackInteraction.getRecipeContext()` is public and returns non-null both for stacks hovered on a recipe screen and for sidebar favourites.
 
-So `RECIPE`-kind actions resolve context as: `hovered.getRecipeContext()` first, falling back to `EmiApi.getRecipeContext(hovered.getStack())`. This is a deliberate superset of EMI (EMI itself uses `RecipeScreen`'s private `group.recipe`, unreachable without mixins); the effect is that `copyId` works both on recipe screens and on favourites.
+So `RECIPE`-kind actions resolve context as: `hovered.getRecipeContext()` first, falling back to `EmiApi.getRecipeContext(hovered.getStack())`.
+
+**Measured correction:** only sidebar favourites (and craft-result slots that carry a recipe context) return non-null. `RecipeScreen` is not a `HandledScreen`, so `EmiApi.getHoveredStack()` there falls back to `lastStackTooltipRendered` with a null recipe; EMI itself uses the private `group.recipe`, unreachable without mixins. **`copyId` is therefore a no-op on recipe screens**; v1 accepts this and says so in the README.
 
 ## 7. Architecture
 
@@ -233,9 +235,9 @@ Evaluated in order, short-circuiting; a failed gate discards the input:
 | Gate | Test | Rationale |
 |---|---|---|
 | Screen open | `mc.screen != null` | EMI only works inside screens |
-| EMI present | `!EmiScreenBase.getCurrent().isEmpty()` | Mirrors the first two lines of `keyPressed` (`base.isEmpty()` returns false, disabled or not) |
+| EMI present | `!EmiScreenBase.getCurrent().isEmpty()`, or the screen is a `BoMScreen` (recipe tree) | `keyPressed` bails on an empty base; the recipe tree never appears in `EmiScreenBase.of()`, so without the exception even "back" is dead inside it |
 | EMI ready | when `EmiScreenManager.isDisabled()`, only `toggleVisibility` passes | Mirrors the branch order: with EMI off or reloading, only the toggle works — otherwise a controller could not turn EMI back on |
-| No focused text field | no `isActive() && visible` `TextFieldWidget` in the screen element tree | Mirrors `hasFocusedTextField(screen, 10)`; **not checked while disabled** (EMI's disabled branch runs before the focus check) |
+| No focused text field | no `isActive() && visible` `TextFieldWidget` in the screen element tree, and `EmiApi.isSearchFocused()` is false | EMI's search box is hand-rendered and **not in the element tree**; walking the tree alone misses it |
 
 All four gates match EMI's own keybind behaviour (see D7). `EmiApi.isSearchFocused()` is no longer used on its own: EMI's search box is itself a `TextFieldWidget` in that tree and is covered by the fourth gate.
 
@@ -279,7 +281,7 @@ Everything runs on the client thread, from a rendering/event-safe context. Retur
 | 19 | `cheatStackToCursor` | STACK | Creative only |
 | 20 | `hideStack` | STACK | Needs `EmiConfig.editMode` |
 | 21 | `hideStackById` | STACK | Same |
-| 22 | `copyId` | RECIPE | Works on recipe screens and favourites (D9) |
+| 22 | `copyId` | RECIPE | Only where a recipe context exists, e.g. sidebar favourites (D9) |
 
 ### 8.6 Compat JSON
 
@@ -416,6 +418,18 @@ Bridge tick
 | R3.5 | `compileOnly` does not reach `testCompileClasspath`, so the plugin test failed to compile | Both loaders add `testImplementation control-flex-api` |
 | R3.6 | EMI's Fabric artifact is built with Loom 1.7.435; Loom 1.6 refuses to configure the project | `settings.gradle` bumped to `fabric-loom 1.7-SNAPSHOT` |
 | R3.7 | Both loaders compile against Mojmap, so per-loader copies of the dispatch are pointless | D6 changed: `common` holds `EmiKeys` / `EmiDispatch` / `EmiTicker`; loaders keep only wiring |
+
+### Round 4 (whole-branch review, 2026-10-31)
+
+| ID | Finding | Action |
+|---|---|---|
+| R4.1 | **EMI's search box is not in the screen element tree** (its `addWidgets()` positions it without adding a child), so the tree scan never sees it — all 22 actions fire while the player types | Gate adds `EmiApi.isSearchFocused()`, extracted as `EmiGate.focusBlocks(...)` with 7 unit tests |
+| R4.2 | The recipe tree (`BoMScreen`) never produces an `EmiScreenBase`, so even "back" was dead inside it | Gate adds a `BoMScreen` exception, extracted as `EmiGate.emiScreenActive(...)` |
+| R4.3 | The entry frame only skipped one frame; a HOLD binding still misfired on the second (CF's suppression happened to cover it) | `EdgeDetector.seed()` records the real held state; the entry frame seeds without firing |
+| R4.4 | `recalculate()` sat outside the try, and ran while EMI was reloading | Moved inside the try, only called when `!disabled` |
+| R4.5 | A clean clone could not build: the wrapper jar was ignored by `*.jar`, and `org.gradle.java.home` pinned a local path | `.gitignore` un-ignores `gradle/wrapper/gradle-wrapper.jar`; the property became a comment, README explains JAVA_HOME |
+| R4.6 | `copyId` has no recipe context on a recipe screen (`RecipeScreen` is not a `HandledScreen`) | No code change; D9 / action table / README now say "sidebar favourites only" |
+| R4.7 | Only 1 of 4 logging points from §8.9 existed (install result discarded, no ready line) | Plugin logs install failure and readiness |
 
 ## 13. Left to the implementer
 

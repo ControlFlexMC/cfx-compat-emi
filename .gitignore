@@ -12,6 +12,8 @@
 
 # Package Files #
 *.jar
+# …except the Gradle wrapper: a clean clone must be able to run ./gradlew
+!gradle/wrapper/gradle-wrapper.jar
 *.war
 *.nar
 *.ear

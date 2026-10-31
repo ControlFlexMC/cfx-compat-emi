@@ -41,4 +41,11 @@ class EdgeDetectorTest {
         d.reset();
         assertTrue(d.update(true, false));
     }
+
+    @Test
+    void seedMarksAButtonAsAlreadyHeldWithoutFiring() {
+        EdgeDetector d = new EdgeDetector();
+        d.seed(true);
+        assertFalse(d.update(true, false));
+    }
 }

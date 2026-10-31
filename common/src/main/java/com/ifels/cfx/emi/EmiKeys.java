@@ -3,13 +3,12 @@ package com.ifels.cfx.emi;
 import com.mojang.blaze3d.platform.InputConstants;
 import net.minecraft.client.KeyMapping;
 
-import java.util.Collections;
 import java.util.EnumMap;
 import java.util.Map;
 import java.util.function.Consumer;
 
 /**
- * The 23 pseudo key mappings ControlFlex discovers by scanning {@code mc.options.keyMappings}.
+ * The 22 pseudo key mappings ControlFlex discovers by scanning {@code mc.options.keyMappings}.
  *
  * <p>Names use our own namespace and the default key is deliberately unbound: a pseudo key bound
  * to a real key would also fire on real keystrokes, and could double-fire against EMI's own
@@ -38,9 +37,5 @@ public final class EmiKeys {
 
     public static boolean isEmpty() {
         return KEYS.isEmpty();
-    }
-
-    public static Map<EmiAction, KeyMapping> all() {
-        return Collections.unmodifiableMap(KEYS);
     }
 }

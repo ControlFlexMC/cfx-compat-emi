@@ -1,0 +1,35 @@
+package com.ifels.cfx.emi;
+
+/**
+ * Pure gate rules, extracted so they can be tested without a client (spec §8.3).
+ */
+public final class EmiGate {
+
+    private EmiGate() {
+    }
+
+    /**
+     * Whether a focused input should swallow this press.
+     *
+     * <p>{@code searchFocused} is separate from {@code textFieldFocused} on purpose: EMI's search
+     * widget is rendered and driven by hand and never enters the screen's element tree, so walking
+     * the tree alone misses it (review finding C1).</p>
+     *
+     * <p>While EMI is disabled the whole focus question is skipped: EMI's own branch order lets
+     * "toggle visibility" through before it looks at inputs.</p>
+     */
+    public static boolean focusBlocks(boolean disabled, boolean searchFocused, boolean textFieldFocused) {
+        return !disabled && (searchFocused || textFieldFocused);
+    }
+
+    /**
+     * Whether the current screen can receive EMI actions.
+     *
+     * <p>{@code EmiScreenBase.getCurrent()} is empty for the recipe-tree screen, which EMI handles
+     * with its own {@code keyPressed}; without this exception every action — including "back" —
+     * would go dead there (review finding I2).</p>
+     */
+    public static boolean emiScreenActive(boolean screenBaseEmpty, boolean recipeTreeScreen) {
+        return !screenBaseEmpty || recipeTreeScreen;
+    }
+}

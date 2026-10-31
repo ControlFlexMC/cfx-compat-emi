@@ -3,11 +3,10 @@ package com.ifels.cfx.emi;
 import java.util.Locale;
 
 /**
- * The 23 EMI actions this bridge exposes (spec §8.5).
+ * The 22 EMI actions this bridge exposes (spec §8.5).
  *
- * <p>{@code bindKey} is the name of the corresponding {@code EmiConfig} field; the per-loader
- * dispatch switches on it. Keeping it as a string is what lets {@code common} stay free of
- * {@code dev.emi.*} types.</p>
+ * <p>{@code bindKey} is the name of the corresponding {@code EmiConfig} field; it is used to
+ * derive the action id. The dispatch switches on the enum constant directly.</p>
  */
 public enum EmiAction {
 
@@ -50,11 +49,6 @@ public enum EmiAction {
     /** ControlFlex action id, e.g. {@code key.cfx_compat_emi.view_recipes}. */
     public String id() {
         return id;
-    }
-
-    /** Name of the {@code EmiConfig} field this action drives. */
-    public String bindKey() {
-        return bindKey;
     }
 
     public ActionKind kind() {

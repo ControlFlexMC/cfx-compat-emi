@@ -45,6 +45,8 @@ search bar), or while EMI is switched off or reloading, nothing fires except "To
 - `defaultStack`, `deleteCursorStack` and `showCraft` — the first two are inline logic deep inside
   EMI's recipe screen, the third is a *held* state rather than an action.
 - `displayAllRecipes` — present in EMI's source tree but not in the released 1.1.24 jar.
+- "Copy Recipe ID" on a *recipe screen* — EMI keeps that context in a private field. It works on
+  sidebar favourites instead.
 - Rebinding EMI's own keys. ControlFlex bindings decide which controller button fires an action;
   they do not rewrite EMI's `binds.*` config.
 
@@ -56,6 +58,9 @@ search bar), or while EMI is switched off or reloading, nothing fires except "To
 
 Jars land in `forge/build/libs` and `fabric/build/libs`. Both loaders compile against official
 Mojang mappings; Fabric uses Loom 1.7 (EMI's artifact is built with it).
+
+Gradle 8.8 runs on JDK 17–22 only — if your default JDK is newer, export `JAVA_HOME` pointing at a
+supported one before invoking the wrapper.
 
 ## Licence
 

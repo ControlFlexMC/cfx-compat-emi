@@ -1,5 +1,7 @@
 package com.ifels.cfx.emi;
 
+import dev.emi.emi.api.EmiApi;
+import dev.emi.emi.screen.BoMScreen;
 import dev.emi.emi.screen.EmiScreenBase;
 import dev.emi.emi.screen.EmiScreenManager;
 import net.minecraft.client.KeyMapping;
@@ -51,22 +53,33 @@ public final class EmiTicker {
             wasInEmi = false;
             return;
         }
-        if (EmiScreenBase.getCurrent().isEmpty()) {
+        if (!EmiGate.emiScreenActive(EmiScreenBase.getCurrent().isEmpty(), screen instanceof BoMScreen)) {
             drainAll();
             resetAll();
             wasInEmi = false;
             return;
         }
-        if (!wasInEmi) {
-            // Entering an EMI screen: a button that opened this screen may still be held.
+
+        boolean entering = !wasInEmi;
+        wasInEmi = true;
+        if (entering) {
+            // A button that opened this screen may still be held: drop its queued click and make
+            // the detectors start from the real state instead of a phantom rising edge.
             drainAll();
-            resetAll();
-            wasInEmi = true;
+            for (EmiAction action : EmiAction.values()) {
+                KeyMapping mapping = EmiKeys.get(action);
+                if (mapping != null) {
+                    DETECTORS.get(action).seed(mapping.isDown());
+                }
+            }
             return;
         }
 
         boolean disabled = EmiScreenManager.isDisabled();
-        boolean focusedField = !disabled && hasFocusedTextField(screen, TEXT_FIELD_DEPTH);
+        boolean focusBlocks = EmiGate.focusBlocks(
+                disabled,
+                EmiApi.isSearchFocused(),
+                !disabled && hasFocusedTextField(screen, TEXT_FIELD_DEPTH));
 
         List<EmiAction> pending = null;
         for (EmiAction action : EmiAction.values()) {
@@ -77,29 +90,37 @@ public final class EmiTicker {
 
             boolean down = mapping.isDown();
             boolean clicked = mapping.consumeClick();
-            if (!down && !clicked) {
+            // Update every frame, gated or not: stale state would fire on the frame a gate lifts.
+            boolean fired = DETECTORS.get(action).update(down, clicked);
+            if (!fired) {
                 continue;
             }
             if (disabled && action != EmiAction.TOGGLE_VISIBILITY) {
                 continue;
             }
-            if (focusedField) {
+            if (focusBlocks) {
                 continue;
             }
 
-            if (DETECTORS.get(action).update(down, clicked)) {
-                if (pending == null) {
-                    pending = new ArrayList<>(2);
-                }
-                pending.add(action);
+            if (pending == null) {
+                pending = new ArrayList<>(2);
             }
+            pending.add(action);
         }
 
         if (pending == null) {
             return;
         }
 
-        EmiScreenManager.recalculate();
+        if (!disabled) {
+            try {
+                EmiScreenManager.recalculate();
+            } catch (Throwable t) {
+                LOGGER.warn("[cfx-compat-emi] recalculate failed, skipping this frame", t);
+                return;
+            }
+        }
+
         for (EmiAction action : pending) {
             try {
                 EmiDispatch.fire(action);
