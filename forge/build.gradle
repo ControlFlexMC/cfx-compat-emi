@@ -31,12 +31,14 @@ legacyForge {
 
 // The shared bridge lives in common/. Tests sit beside the loader but exercise that
 // shared code, so they reuse main's output instead of recompiling common/.
+// The shared bridge lives in common/, tests included — both loaders run the same suite.
 sourceSets {
     main {
         java.srcDir(rootProject.file('common/src/main/java'))
         resources.srcDir(rootProject.file('common/src/main/resources'))
     }
     test {
+        java.srcDir(rootProject.file('common/src/test/java'))
         compileClasspath += sourceSets.main.output
         runtimeClasspath += sourceSets.main.output
     }

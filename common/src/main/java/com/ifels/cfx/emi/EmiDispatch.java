@@ -1,11 +1,9 @@
 package com.ifels.cfx.emi;
 
 import dev.emi.emi.api.EmiApi;
-import dev.emi.emi.api.recipe.EmiRecipe;
-import dev.emi.emi.api.stack.EmiIngredient;
 import dev.emi.emi.api.stack.EmiStackInteraction;
-import dev.emi.emi.input.EmiBind;
 import dev.emi.emi.config.EmiConfig;
+import dev.emi.emi.input.EmiBind;
 import dev.emi.emi.screen.EmiScreenManager;
 
 /**
@@ -26,26 +24,8 @@ public final class EmiDispatch {
         EmiBind bind = bind(action);
         return switch (action.kind()) {
             case STACK -> EmiScreenManager.stackInteraction(hovered, b -> b == bind);
-            case STACK_THEN_RECIPE ->
-                    EmiScreenManager.stackInteraction(hovered, b -> b == bind)
-                            || EmiScreenManager.recipeInteraction(recipeContext(hovered), b -> b == bind);
-            case RECIPE ->
-                    EmiScreenManager.recipeInteraction(recipeContext(hovered), b -> b == bind);
             case GENERIC -> EmiScreenManager.genericInteraction(b -> b == bind);
         };
-    }
-
-    /**
-     * Recipe context for recipe-level actions. {@code EmiApi.getRecipeContext} only answers for
-     * favourites, so the hovered interaction's own context is preferred (spec §D9).
-     */
-    private static EmiRecipe recipeContext(EmiStackInteraction hovered) {
-        EmiRecipe direct = hovered.getRecipeContext();
-        if (direct != null) {
-            return direct;
-        }
-        EmiIngredient stack = hovered.getStack();
-        return stack == null ? null : EmiApi.getRecipeContext(stack);
     }
 
     /** Exhaustive on purpose: adding an {@link EmiAction} without a bind must not compile. */
@@ -60,7 +40,6 @@ public final class EmiDispatch {
             case VIEW_STACK_TREE -> EmiConfig.viewStackTree;
             case VIEW_TREE -> EmiConfig.viewTree;
             case BACK -> EmiConfig.back;
-            case FORWARD -> EmiConfig.forward;
             case CRAFT_ONE -> EmiConfig.craftOne;
             case CRAFT_ALL -> EmiConfig.craftAll;
             case CRAFT_ONE_TO_INVENTORY -> EmiConfig.craftOneToInventory;
@@ -72,7 +51,6 @@ public final class EmiDispatch {
             case CHEAT_STACK_TO_CURSOR -> EmiConfig.cheatStackToCursor;
             case HIDE_STACK -> EmiConfig.hideStack;
             case HIDE_STACK_BY_ID -> EmiConfig.hideStackById;
-            case COPY_ID -> EmiConfig.copyId;
         };
     }
 }

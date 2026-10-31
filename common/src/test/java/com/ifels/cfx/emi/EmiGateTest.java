@@ -26,19 +26,4 @@ class EmiGateTest {
     void disabledBypassesTheFocusGate() {
         assertFalse(EmiGate.focusBlocks(true, true, true));
     }
-
-    @Test
-    void recipeTreeScreenCountsAsAnEmiScreen() {
-        assertTrue(EmiGate.emiScreenActive(true, true));
-    }
-
-    @Test
-    void plainScreenWithoutEmiBaseIsNotAnEmiScreen() {
-        assertFalse(EmiGate.emiScreenActive(true, false));
-    }
-
-    @Test
-    void screenWithEmiBaseIsAnEmiScreen() {
-        assertTrue(EmiGate.emiScreenActive(false, false));
-    }
 }

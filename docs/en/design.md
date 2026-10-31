@@ -1,5 +1,14 @@
 # Control Flex × EMI Compat Bridge — Design
 
+> **Branch note (1.19.2):** this document was written for the 1.20.1 branch. 1.19.2 keeps the same
+> architecture; the differences all come from EMI's version. (1) Loaders are **Forge 43.2.0 +
+> Fabric 0.14.21**; (2) MC 1.19.2 / Java 17; (3) only **EMI 1.0.9** exists for 1.19.2 — its
+> `EmiConfig` has 23 `EmiBind` fields with **no `forward` and no `copyId`**, and there is no
+> `recipeInteraction`, so the action table is **20 entries** and `FAVORITE` degrades to stack-only;
+> (4) there is no `EmiScreenBase`, so the "EMI is in this screen" gate uses EMI's own `EmiScreen`
+> marker interface (`HandledScreen` gets it from EMI's mixin, `RecipeScreen` / `BoMScreen` implement
+> it directly) — which also removes the recipe-tree special case this document describes.
+
 - Project: `cfx-compat-emi`
 - Targets: Minecraft 1.20.1 / Forge 47.x + Fabric 0.15.x
 - Depends on: ControlFlex ≥ 0.8.9, EMI 1.1.24 (`dev.emi:emi-*`)

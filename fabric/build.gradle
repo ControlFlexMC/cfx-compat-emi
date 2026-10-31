@@ -23,12 +23,14 @@ loom {
 }
 
 // The shared bridge lives in common/.
+// The shared bridge lives in common/, tests included — both loaders run the same suite.
 sourceSets {
     main {
         java.srcDir(rootProject.file('common/src/main/java'))
         resources.srcDir(rootProject.file('common/src/main/resources'))
     }
     test {
+        java.srcDir(rootProject.file('common/src/test/java'))
         compileClasspath += sourceSets.main.output
         runtimeClasspath += sourceSets.main.output
     }
@@ -58,6 +60,8 @@ dependencies {
 
     testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
     testImplementation 'org.slf4j:slf4j-api:2.0.9'
+    // compileOnly does not reach the test classpath; the plugin test needs the API.
+    testImplementation "com.github.ControlFlexMC:control-flex-api:${controlflex_api_version}"
 }
 
 tasks.withType(JavaCompile).configureEach {

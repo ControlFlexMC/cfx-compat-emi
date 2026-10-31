@@ -3,10 +3,10 @@ package com.ifels.cfx.emi;
 import java.util.Locale;
 
 /**
- * The 22 EMI actions this bridge exposes (spec §8.5).
+ * The 20 EMI actions this bridge exposes on 1.19.2 (spec §8.5).
  *
- * <p>{@code bindKey} is the name of the corresponding {@code EmiConfig} field; it is used to
- * derive the action id. The dispatch switches on the enum constant directly.</p>
+ * <p>Two actions from the 1.20.1 table are missing because EMI 1.0.9 has no bind for them:
+ * {@code forward} and {@code copyId}.</p>
  */
 public enum EmiAction {
 
@@ -15,11 +15,10 @@ public enum EmiAction {
     CLEAR_SEARCH("clearSearch", ActionKind.GENERIC),
     VIEW_RECIPES("viewRecipes", ActionKind.STACK),
     VIEW_USES("viewUses", ActionKind.STACK),
-    FAVORITE("favorite", ActionKind.STACK_THEN_RECIPE),
+    FAVORITE("favorite", ActionKind.STACK),
     VIEW_STACK_TREE("viewStackTree", ActionKind.STACK),
     VIEW_TREE("viewTree", ActionKind.GENERIC),
     BACK("back", ActionKind.GENERIC),
-    FORWARD("forward", ActionKind.GENERIC),
     CRAFT_ONE("craftOne", ActionKind.STACK),
     CRAFT_ALL("craftAll", ActionKind.STACK),
     CRAFT_ONE_TO_INVENTORY("craftOneToInventory", ActionKind.STACK),
@@ -30,8 +29,7 @@ public enum EmiAction {
     CHEAT_ONE_TO_CURSOR("cheatOneToCursor", ActionKind.STACK),
     CHEAT_STACK_TO_CURSOR("cheatStackToCursor", ActionKind.STACK),
     HIDE_STACK("hideStack", ActionKind.STACK),
-    HIDE_STACK_BY_ID("hideStackById", ActionKind.STACK),
-    COPY_ID("copyId", ActionKind.RECIPE);
+    HIDE_STACK_BY_ID("hideStackById", ActionKind.STACK);
 
     public static final String ID_PREFIX = "key.cfx_compat_emi.";
     public static final String CATEGORY = "key.categories.cfx_compat_emi";

@@ -11,8 +11,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class EmiActionTest {
 
     @Test
-    void hasExactlyTwentyTwoActions() {
-        assertEquals(22, EmiAction.values().length);
+    void hasExactlyTwentyActions() {
+        assertEquals(20, EmiAction.values().length);
     }
 
     @Test
@@ -27,8 +27,8 @@ class EmiActionTest {
     @Test
     void kindAssignmentMatchesSpec() {
         assertEquals(ActionKind.STACK, EmiAction.VIEW_RECIPES.kind());
-        assertEquals(ActionKind.STACK_THEN_RECIPE, EmiAction.FAVORITE.kind());
-        assertEquals(ActionKind.RECIPE, EmiAction.COPY_ID.kind());
+        // EMI 1.0.9 has no recipe-level dispatcher, so favourites are stack-only here.
+        assertEquals(ActionKind.STACK, EmiAction.FAVORITE.kind());
         assertEquals(ActionKind.GENERIC, EmiAction.TOGGLE_VISIBILITY.kind());
     }
 }

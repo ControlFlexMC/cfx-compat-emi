@@ -21,15 +21,4 @@ public final class EmiGate {
     public static boolean focusBlocks(boolean disabled, boolean searchFocused, boolean textFieldFocused) {
         return !disabled && (searchFocused || textFieldFocused);
     }
-
-    /**
-     * Whether the current screen can receive EMI actions.
-     *
-     * <p>{@code EmiScreenBase.getCurrent()} is empty for the recipe-tree screen, which EMI handles
-     * with its own {@code keyPressed}; without this exception every action — including "back" —
-     * would go dead there (review finding I2).</p>
-     */
-    public static boolean emiScreenActive(boolean screenBaseEmpty, boolean recipeTreeScreen) {
-        return !screenBaseEmpty || recipeTreeScreen;
-    }
 }

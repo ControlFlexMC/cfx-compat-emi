@@ -3,7 +3,7 @@
 ControlFlex bridge mod for [EMI](https://modrinth.com/mod/emi). Exposes EMI's actions as bindable
 ControlFlex actions, so a controller can drive the recipe viewer without touching a keyboard.
 
-Requires **Minecraft 1.20.1**, **ControlFlex ≥ 0.8.9** and **EMI** (1.1.x). Forge and Fabric are
+Requires **Minecraft 1.19.2**, **ControlFlex ≥ 0.8.9** and **EMI** (1.0.x). Forge and Fabric are
 both supported from the same source.
 
 ## What it does
@@ -12,20 +12,21 @@ EMI stores its keybinds in its own config (`binds.*`) and matches them inside it
 registers no Minecraft `KeyMapping`, which is why its actions never appear in vanilla Controls or
 in ControlFlex's mod-key list.
 
-This mod registers 22 pseudo key mappings that ControlFlex discovers, and forwards each press back
+This mod registers 20 pseudo key mappings that ControlFlex discovers, and forwards each press back
 into EMI through EMI's own interaction functions. Nothing is injected as fake input, and EMI's
 own key settings are left untouched.
 
 | Group | Actions |
 |---|---|
 | Screen | Toggle EMI, Focus Search, Clear Search |
-| Browse | View Recipes, View Uses, Add to Favorites, View Recipe Tree, View Stack Tree, Back, Forward |
+| Browse | View Recipes, View Uses, Add to Favorites, View Recipe Tree, View Stack Tree, Back |
 | Craft | Craft One, Craft a Stack, to Inventory (one / stack), to Cursor (one) |
 | Creative | Cheat One / a Stack to Inventory, Cheat One / a Stack to Cursor |
-| Manage | Hide Item, Hide Item by ID, Copy Recipe ID |
+| Manage | Hide Item, Hide Item by ID |
 
-All twenty-two live in the GUI layer and are listed under "Control Flex x EMI" in ControlFlex's
-binding settings.
+All twenty live in the GUI layer and are listed under "EMI" in ControlFlex's binding settings.
+EMI 1.0.9 — the last 1.19.2 build — has no "forward" or "copy recipe id" bind, so those two actions
+from the newer branches are absent here.
 
 ## Using it
 
@@ -44,9 +45,8 @@ search bar), or while EMI is switched off or reloading, nothing fires except "To
 
 - `defaultStack`, `deleteCursorStack` and `showCraft` — the first two are inline logic deep inside
   EMI's recipe screen, the third is a *held* state rather than an action.
-- `displayAllRecipes` — present in EMI's source tree but not in the released 1.1.24 jar.
-- "Copy Recipe ID" on a *recipe screen* — EMI keeps that context in a private field. It works on
-  sidebar favourites instead.
+- `forward` and `copyId` — EMI 1.0.9 has no bind for either, and no recipe-level dispatcher at all,
+  so favourites here are stack-only.
 - Rebinding EMI's own keys. ControlFlex bindings decide which controller button fires an action;
   they do not rewrite EMI's `binds.*` config.
 

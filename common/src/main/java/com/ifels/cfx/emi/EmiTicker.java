@@ -1,8 +1,7 @@
 package com.ifels.cfx.emi;
 
 import dev.emi.emi.api.EmiApi;
-import dev.emi.emi.screen.BoMScreen;
-import dev.emi.emi.screen.EmiScreenBase;
+import dev.emi.emi.screen.EmiScreen;
 import dev.emi.emi.screen.EmiScreenManager;
 import net.minecraft.client.KeyMapping;
 import net.minecraft.client.Minecraft;
@@ -53,7 +52,9 @@ public final class EmiTicker {
             wasInEmi = false;
             return;
         }
-        if (!EmiGate.emiScreenActive(EmiScreenBase.getCurrent().isEmpty(), screen instanceof BoMScreen)) {
+        // EMI 1.0.9 marks every screen it draws into with this interface (HandledScreen gets it
+        // through a mixin, RecipeScreen and BoMScreen implement it directly).
+        if (!(screen instanceof EmiScreen)) {
             drainAll();
             resetAll();
             wasInEmi = false;

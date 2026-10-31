@@ -9,7 +9,6 @@
   "key.cfx_compat_emi.view_stack_tree": "View Stack Tree",
   "key.cfx_compat_emi.view_tree": "View Recipe Tree",
   "key.cfx_compat_emi.back": "Back",
-  "key.cfx_compat_emi.forward": "Forward",
   "key.cfx_compat_emi.craft_one": "Craft One",
   "key.cfx_compat_emi.craft_all": "Craft a Stack",
   "key.cfx_compat_emi.craft_one_to_inventory": "Craft One to Inventory",
@@ -20,6 +19,5 @@
   "key.cfx_compat_emi.cheat_one_to_cursor": "Cheat One to Cursor",
   "key.cfx_compat_emi.cheat_stack_to_cursor": "Cheat a Stack to Cursor",
   "key.cfx_compat_emi.hide_stack": "Hide Item",
-  "key.cfx_compat_emi.hide_stack_by_id": "Hide Item by ID",
-  "key.cfx_compat_emi.copy_id": "Copy Recipe ID"
+  "key.cfx_compat_emi.hide_stack_by_id": "Hide Item by ID"
 }
