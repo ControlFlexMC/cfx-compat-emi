@@ -11,8 +11,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class EmiActionTest {
 
     @Test
-    void hasExactlyTwentyThreeActions() {
-        assertEquals(23, EmiAction.values().length);
+    void hasExactlyTwentyTwoActions() {
+        assertEquals(22, EmiAction.values().length);
     }
 
     @Test
@@ -26,7 +26,7 @@ class EmiActionTest {
 
     @Test
     void kindAssignmentMatchesSpec() {
-        assertEquals(ActionKind.API, EmiAction.DISPLAY_ALL_RECIPES.kind());
+        assertEquals(ActionKind.STACK, EmiAction.VIEW_RECIPES.kind());
         assertEquals(ActionKind.STACK_THEN_RECIPE, EmiAction.FAVORITE.kind());
         assertEquals(ActionKind.RECIPE, EmiAction.COPY_ID.kind());
         assertEquals(ActionKind.GENERIC, EmiAction.TOGGLE_VISIBILITY.kind());

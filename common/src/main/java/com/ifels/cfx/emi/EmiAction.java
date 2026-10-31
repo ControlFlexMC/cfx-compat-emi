@@ -14,7 +14,6 @@ public enum EmiAction {
     TOGGLE_VISIBILITY("toggleVisibility", ActionKind.GENERIC),
     FOCUS_SEARCH("focusSearch", ActionKind.GENERIC),
     CLEAR_SEARCH("clearSearch", ActionKind.GENERIC),
-    DISPLAY_ALL_RECIPES("displayAllRecipes", ActionKind.API),
     VIEW_RECIPES("viewRecipes", ActionKind.STACK),
     VIEW_USES("viewUses", ActionKind.STACK),
     FAVORITE("favorite", ActionKind.STACK_THEN_RECIPE),

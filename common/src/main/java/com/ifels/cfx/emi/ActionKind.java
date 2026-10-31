@@ -15,8 +15,5 @@ public enum ActionKind {
     RECIPE,
 
     /** {@code EmiScreenManager.genericInteraction} (screen-level actions). */
-    GENERIC,
-
-    /** Direct {@code EmiApi} call. */
-    API
+    GENERIC
 }
