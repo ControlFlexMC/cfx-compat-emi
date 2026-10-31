@@ -11,8 +11,8 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 class EmiActionTest {
 
     @Test
-    void hasExactlyTwentyActions() {
-        assertEquals(20, EmiAction.values().length);
+    void hasExactlyEighteenActions() {
+        assertEquals(18, EmiAction.values().length);
     }
 
     @Test

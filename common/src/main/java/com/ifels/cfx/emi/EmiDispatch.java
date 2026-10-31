@@ -2,8 +2,8 @@ package com.ifels.cfx.emi;
 
 import dev.emi.emi.api.EmiApi;
 import dev.emi.emi.api.stack.EmiStackInteraction;
+import dev.emi.emi.bind.EmiBind;
 import dev.emi.emi.config.EmiConfig;
-import dev.emi.emi.input.EmiBind;
 import dev.emi.emi.screen.EmiScreenManager;
 
 /**
@@ -49,8 +49,6 @@ public final class EmiDispatch {
             case CHEAT_STACK_TO_INVENTORY -> EmiConfig.cheatStackToInventory;
             case CHEAT_ONE_TO_CURSOR -> EmiConfig.cheatOneToCursor;
             case CHEAT_STACK_TO_CURSOR -> EmiConfig.cheatStackToCursor;
-            case HIDE_STACK -> EmiConfig.hideStack;
-            case HIDE_STACK_BY_ID -> EmiConfig.hideStackById;
         };
     }
 }

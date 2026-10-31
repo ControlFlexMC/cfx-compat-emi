@@ -55,8 +55,10 @@ dependencies {
     // ControlFlex API (plain Java, loader-agnostic), resolved from JitPack.
     compileOnly "com.github.ControlFlexMC:control-flex-api:${controlflex_api_version}"
     // EMI's Fabric artifact; Loom remaps it to the project mappings (mojmap).
-    modCompileOnly "dev.emi:emi-fabric:${emi_version}"
-    modLocalRuntime "dev.emi:emi-fabric:${emi_version}"
+    // EMI 0.7.x published the Fabric jar under the plain `emi` artifact; the per-loader split
+    // (emi-fabric / emi-forge) came later and has no 1.18.2 builds.
+    modCompileOnly "dev.emi:emi:${emi_version}"
+    modLocalRuntime "dev.emi:emi:${emi_version}"
 
     testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
     testImplementation 'org.slf4j:slf4j-api:2.0.9'
@@ -83,7 +85,7 @@ processResources {
         'minecraft_version'       : minecraft_version,
         'fabric_loader_version'   : fabric_loader_version,
         'java_version'            : java_version,
-        'controlflex_version_range': controlflex_version_range_fabric,
+        'controlflex_version_range': controlflex_version_range,
         'emi_version_range'       : emi_version_range,
     ]
 

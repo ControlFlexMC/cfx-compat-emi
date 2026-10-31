@@ -25,9 +25,7 @@
         "key.cfx_compat_emi.cheat_one_to_inventory": {},
         "key.cfx_compat_emi.cheat_stack_to_inventory": {},
         "key.cfx_compat_emi.cheat_one_to_cursor": {},
-        "key.cfx_compat_emi.cheat_stack_to_cursor": {},
-        "key.cfx_compat_emi.hide_stack": {},
-        "key.cfx_compat_emi.hide_stack_by_id": {}
+        "key.cfx_compat_emi.cheat_stack_to_cursor": {}
       }
     }
   ]

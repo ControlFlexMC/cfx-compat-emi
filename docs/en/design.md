@@ -1,13 +1,14 @@
 # Control Flex × EMI Compat Bridge — Design
 
-> **Branch note (1.19.2):** this document was written for the 1.20.1 branch. 1.19.2 keeps the same
-> architecture; the differences all come from EMI's version. (1) Loaders are **Forge 43.2.0 +
-> Fabric 0.14.21**; (2) MC 1.19.2 / Java 17; (3) only **EMI 1.0.9** exists for 1.19.2 — its
-> `EmiConfig` has 23 `EmiBind` fields with **no `forward` and no `copyId`**, and there is no
-> `recipeInteraction`, so the action table is **20 entries** and `FAVORITE` degrades to stack-only;
-> (4) there is no `EmiScreenBase`, so the "EMI is in this screen" gate uses EMI's own `EmiScreen`
-> marker interface (`HandledScreen` gets it from EMI's mixin, `RecipeScreen` / `BoMScreen` implement
-> it directly) — which also removes the recipe-tree special case this document describes.
+> **Branch note (1.18.2):** this document was written for the 1.20.1 branch. Everything 1.18.2
+> changes comes from EMI stopping at **0.7.3**: (1) **Fabric only** — EMI never published a Forge
+> build for 1.18.2 (all 28 of its 1.18.2 versions are fabric/quilt) and this mod hard-depends on
+> EMI, so a Forge jar could not run; (2) MC 1.18.2 / Java 17; (3) `EmiConfig` has 19 `EmiBind`
+> fields — no `hideStack` / `hideStackById` (0.7.x has no edit mode), no `forward` / `copyId`, and
+> no `recipeInteraction` at all — so the action table is **18 entries** and favourites are
+> stack-only; (4) `EmiBind` lives in `dev.emi.emi.bind`, and there is no
+> `EmiScreenManager.isDisabled()`, so the gate reads `EmiConfig.enabled`; the `EmiScreen` marker
+> interface still exists, so screen detection is unchanged.
 
 - Project: `cfx-compat-emi`
 - Targets: Minecraft 1.20.1 / Forge 47.x + Fabric 0.15.x

@@ -17,7 +17,5 @@
   "key.cfx_compat_emi.cheat_one_to_inventory": "作弊取一个到背包",
   "key.cfx_compat_emi.cheat_stack_to_inventory": "作弊取一组到背包",
   "key.cfx_compat_emi.cheat_one_to_cursor": "作弊取一个到光标",
-  "key.cfx_compat_emi.cheat_stack_to_cursor": "作弊取一组到光标",
-  "key.cfx_compat_emi.hide_stack": "隐藏物品",
-  "key.cfx_compat_emi.hide_stack_by_id": "按 ID 隐藏物品"
+  "key.cfx_compat_emi.cheat_stack_to_cursor": "作弊取一组到光标"
 }

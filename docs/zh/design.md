@@ -1,11 +1,12 @@
 # Control Flex × EMI 兼容桥 — 设计文档
 
-> **分支说明（1.19.2）**：本文为 1.20.1 分支所写，1.19.2 分支沿用同一套架构，差异集中在 EMI 版本：
-> ① 加载器是 **Forge + Fabric**（Forge 43.2.0 / Fabric loader 0.14.21）；② 目标是 MC 1.19.2 / Java 17；
-> ③ EMI 只能用 **1.0.9**（1.19.2 的最后一个版本）：`EmiConfig` 只有 23 个 `EmiBind`，**没有 `forward`、
-> `copyId`**，也没有 `recipeInteraction`，所以动作表是 **20 项**，`FAVORITE` 退化为纯 STACK 级；
-> ④ 没有 `EmiScreenBase`，「EMI 在场」门禁改用 EMI 自己的标记接口 `EmiScreen`（`HandledScreen` 由 EMI 的
-> mixin 实现它，`RecipeScreen` / `BoMScreen` 直接实现），因此也不存在 1.20.1 上的配方树特例。
+> **分支说明（1.18.2）**：本文为 1.20.1 分支所写，1.18.2 分支的差异全部来自 EMI 只能到 **0.7.3**：
+> ① 只做 **Fabric** —— EMI 从未发布 1.18.2 的 Forge 构建（Modrinth 上 1.18.2 的 28 个版本都是
+> fabric/quilt），而本模组硬依赖 EMI，Forge 包放进去也跑不起来；② 目标是 MC 1.18.2 / Java 17；
+> ③ `EmiConfig` 只有 19 个 `EmiBind`：没有 `hideStack` / `hideStackById`（0.7.x 无编辑模式），
+> 也没有 `forward` / `copyId`，更没有 `recipeInteraction` → 动作表 **18 项**，收藏退化为纯物品级；
+> ④ API 细节：`EmiBind` 在 `dev.emi.emi.bind`（不是 `.input`），且没有 `EmiScreenManager.isDisabled()`，
+> 门禁改读 `EmiConfig.enabled`；`EmiScreen` 标记接口仍然存在，屏幕判定不变。
 
 - 项目：`cfx-compat-emi`
 - 目标版本：Minecraft 1.20.1 / Forge 47.x + Fabric 0.15.x

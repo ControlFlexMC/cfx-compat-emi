@@ -3,10 +3,11 @@ package com.ifels.cfx.emi;
 import java.util.Locale;
 
 /**
- * The 20 EMI actions this bridge exposes on 1.19.2 (spec §8.5).
+ * The 18 EMI actions this bridge exposes on 1.18.2 (spec §8.5).
  *
- * <p>Two actions from the 1.20.1 table are missing because EMI 1.0.9 has no bind for them:
- * {@code forward} and {@code copyId}.</p>
+ * <p>EMI 0.7.3 — the last 1.18.2 release — has 19 binds and no edit mode: compared with the
+ * 1.19.2 table it also lacks {@code hideStack} and {@code hideStackById}, plus the
+ * {@code forward} and {@code copyId} binds that never existed before 1.1.</p>
  */
 public enum EmiAction {
 
@@ -27,9 +28,7 @@ public enum EmiAction {
     CHEAT_ONE_TO_INVENTORY("cheatOneToInventory", ActionKind.STACK),
     CHEAT_STACK_TO_INVENTORY("cheatStackToInventory", ActionKind.STACK),
     CHEAT_ONE_TO_CURSOR("cheatOneToCursor", ActionKind.STACK),
-    CHEAT_STACK_TO_CURSOR("cheatStackToCursor", ActionKind.STACK),
-    HIDE_STACK("hideStack", ActionKind.STACK),
-    HIDE_STACK_BY_ID("hideStackById", ActionKind.STACK);
+    CHEAT_STACK_TO_CURSOR("cheatStackToCursor", ActionKind.STACK);
 
     public static final String ID_PREFIX = "key.cfx_compat_emi.";
     public static final String CATEGORY = "key.categories.cfx_compat_emi";
