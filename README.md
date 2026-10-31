@@ -53,16 +53,12 @@ search bar), or while EMI is switched off or reloading, nothing fires except "To
 ## Building
 
 ```bash
-tools/fetch-deps.sh                        # populate fabric/libs-repo (see its README)
 ./gradlew :fabric:build
 ```
 
 The jar lands in `fabric/build/libs`. Sources compile against official Mojang mappings; Fabric uses
 Loom 1.7 (EMI's artifact is built with it). Gradle 8.8 runs on JDK 17–22 only — if your default JDK
 is newer, export `JAVA_HOME` pointing at a supported one before invoking the wrapper.
-
-`tools/fetch-deps.sh [MODS_DIR]` copies the Fabric API and EMI jars out of a mods folder when given
-one, otherwise downloads them; both are git-ignored binaries.
 
 ## Licence
 

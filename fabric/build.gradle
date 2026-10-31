@@ -35,11 +35,6 @@ sourceSets {
 }
 
 repositories {
-    // Fabric API and EMI are served from a local repo under distinct coordinates
-    // (cfx.local:*). maven.fabricmc.net and repo.sleeping.town stall for minutes on some
-    // networks; distinct coordinates keep Gradle from reusing cached remote metadata.
-    // Populate with tools/fetch-deps.sh (see libs-repo/README.md).
-    maven { url = uri(layout.projectDirectory.dir('libs-repo')) }
     mavenCentral()
     maven { url 'https://jitpack.io' }
     maven {
@@ -53,18 +48,13 @@ dependencies {
     mappings loom.officialMojangMappings()
 
     modImplementation "net.fabricmc:fabric-loader:${fabric_loader_version}"
-    // Only the two Fabric API modules this mod touches. The game provides the full API at
-    // runtime; pulling the whole bundle here also drags ~120 modules through a maven that
-    // stalls on some networks.
-    modCompileOnly "cfx.local:fabric-api-base:1.21.1"
-    modCompileOnly "cfx.local:fabric-key-binding-api-v1:1.21.1"
-    modCompileOnly "cfx.local:fabric-lifecycle-events-v1:1.21.1"
+    modImplementation "net.fabricmc.fabric-api:fabric-api:${fabric_api_version}"
 
     // ControlFlex API (plain Java, loader-agnostic), resolved from JitPack.
     compileOnly "com.github.ControlFlexMC:control-flex-api:${controlflex_api_version}"
     // EMI's Fabric artifact; Loom remaps it to the project mappings (mojmap).
-    modCompileOnly "cfx.local:emi-fabric:1.21.1"
-    modLocalRuntime "cfx.local:emi-fabric:1.21.1"
+    modCompileOnly "dev.emi:emi-fabric:${emi_version}"
+    modLocalRuntime "dev.emi:emi-fabric:${emi_version}"
 
     testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
     testImplementation 'org.slf4j:slf4j-api:2.0.9'

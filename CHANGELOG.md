@@ -4,8 +4,6 @@
 
 - Same 22 EMI actions as the 1.20.1 branch, ported to 1.21.1 / Java 21. Fabric only: 1.21.1 has no
   Forge, and NeoForge is not part of this branch.
-- Build-time dependencies come from the local `fabric/libs-repo` (see `tools/fetch-deps.sh`), since
-  `maven.fabricmc.net` and `repo.sleeping.town` stall on some networks.
 - `displayAllRecipes` is still absent from EMI's released `EmiConfig`, so the action table stays 22.
 
 ## 0.1.0 — MC 1.20.1 (Forge + Fabric)
