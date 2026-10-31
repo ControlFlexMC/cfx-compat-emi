@@ -1,5 +1,13 @@
 # Control Flex × EMI Compat Bridge — Design
 
+> **Branch note (1.21.1):** this document was written for the 1.20.1 branch. 1.21.1 keeps the same
+> architecture and differs in four ways: (1) Fabric only — 1.21.1 has no Forge, and NeoForge is not
+> part of this branch; (2) MC 1.21.1 / Java 21; (3) EMI is `1.1.24+1.21.1`, whose release also ships
+> 25 `EmiBind` fields (no `displayAllRecipes`), so the action count stays 22; (4) build-time
+> dependencies come from the local `fabric/libs-repo` repository (filled by `tools/fetch-deps.sh`)
+> because `maven.fabricmc.net` and `repo.sleeping.town` stall on some networks. Forge-specific
+> sections (`mods.toml`, `RegisterKeyMappingsEvent`, Maven ranges) do not apply on this branch.
+
 - Project: `cfx-compat-emi`
 - Targets: Minecraft 1.20.1 / Forge 47.x + Fabric 0.15.x
 - Depends on: ControlFlex ≥ 0.8.9, EMI 1.1.24 (`dev.emi:emi-*`)

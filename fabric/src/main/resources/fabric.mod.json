@@ -11,8 +11,8 @@
     "client": ["com.ifels.cfx.emi.fabric.CfxEmiMod"]
   },
   "depends": {
-    "fabricloader": ">=${fabric_loader_version}",
-    "fabric-api": "*",
+    "fabricloader": "${fabric_loader_version}",
+    "fabric-api": "${fabric_api_version}",
     "minecraft": "${minecraft_version}",
     "java": ">=${java_version}",
     "controlflex": "${controlflex_version_range}",

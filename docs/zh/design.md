@@ -1,5 +1,12 @@
 # Control Flex × EMI 兼容桥 — 设计文档
 
+> **分支说明（1.21.1）**：本文最初为 1.20.1 分支所写，1.21.1 分支沿用同一套架构，差异只有四条：
+> ① 只做 Fabric（1.21.1 没有 Forge，NeoForge 未纳入本分支）；② 目标是 MC 1.21.1 / Java 21；
+> ③ EMI 为 `1.1.24+1.21.1`，发布产物同样是 25 个 `EmiBind`（没有 `displayAllRecipes`），动作数仍是 22；
+> ④ 构建期依赖改由 `fabric/libs-repo` 本地仓库提供（`tools/fetch-deps.sh` 填充），因为
+> `maven.fabricmc.net` 与 `repo.sleeping.town` 在部分网络下会长时间卡住。
+> 文中的 Forge 相关内容（`mods.toml`、`RegisterKeyMappingsEvent`、Maven 区间）在 1.21.1 分支上不适用。
+
 - 项目：`cfx-compat-emi`
 - 目标版本：Minecraft 1.20.1 / Forge 47.x + Fabric 0.15.x
 - 依赖：ControlFlex ≥ 0.8.9、EMI 1.1.24（`dev.emi:emi-*`）

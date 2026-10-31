@@ -31,6 +31,10 @@ build/
 */build/
 run-fabric/
 run-forge/
+fabric/logs/
+
+# Local dependency repo: poms and README are tracked, the jars are not (see tools/fetch-deps.sh)
+fabric/libs-repo/**/*.jar
 
 # Superpowers plan workspace (scratch)
 .superpowers/

@@ -2,23 +2,13 @@ pluginManagement {
     repositories {
         gradlePluginPortal()
         maven {
-            name = 'MinecraftForge'
-            url = 'https://maven.minecraftforge.net/'
-        }
-        maven {
-            name = 'SpongePowered'
-            url = 'https://repo.spongepowered.org/repository/maven-public/'
-        }
-        maven {
             name = 'FabricMC'
             url = 'https://maven.fabricmc.net/'
         }
     }
 
     plugins {
-        id 'net.neoforged.moddev.legacyforge' version '2.0.141'
-        // EMI's Fabric artifact is built with Loom 1.7.435; Loom 1.6 refuses to configure
-        // the project for it ("Mod was built with a newer version of Loom").
+        // EMI's Fabric artifacts are built with Loom 1.7.x; older Loom refuses to configure.
         id 'fabric-loom' version '1.7-SNAPSHOT'
     }
 }
@@ -27,7 +17,8 @@ plugins {
     id 'org.gradle.toolchains.foojay-resolver-convention' version '0.8.0'
 }
 
-// This branch (1.20.1) has the two 1.20.1 loaders only.
-include 'forge', 'fabric'
+// 1.21.1 has no Forge: this branch is Fabric only (ControlFlex itself also ships NeoForge,
+// but the NeoForge port is a separate piece of work).
+include 'fabric'
 
 rootProject.name = 'cfx-compat-emi'

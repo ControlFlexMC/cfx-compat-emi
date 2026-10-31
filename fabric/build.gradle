@@ -35,6 +35,11 @@ sourceSets {
 }
 
 repositories {
+    // Fabric API and EMI are served from a local repo under distinct coordinates
+    // (cfx.local:*). maven.fabricmc.net and repo.sleeping.town stall for minutes on some
+    // networks; distinct coordinates keep Gradle from reusing cached remote metadata.
+    // Populate with tools/fetch-deps.sh (see libs-repo/README.md).
+    maven { url = uri(layout.projectDirectory.dir('libs-repo')) }
     mavenCentral()
     maven { url 'https://jitpack.io' }
     maven {
@@ -48,16 +53,23 @@ dependencies {
     mappings loom.officialMojangMappings()
 
     modImplementation "net.fabricmc:fabric-loader:${fabric_loader_version}"
-    modImplementation "net.fabricmc.fabric-api:fabric-api:${fabric_api_version}"
+    // Only the two Fabric API modules this mod touches. The game provides the full API at
+    // runtime; pulling the whole bundle here also drags ~120 modules through a maven that
+    // stalls on some networks.
+    modCompileOnly "cfx.local:fabric-api-base:1.21.1"
+    modCompileOnly "cfx.local:fabric-key-binding-api-v1:1.21.1"
+    modCompileOnly "cfx.local:fabric-lifecycle-events-v1:1.21.1"
 
     // ControlFlex API (plain Java, loader-agnostic), resolved from JitPack.
     compileOnly "com.github.ControlFlexMC:control-flex-api:${controlflex_api_version}"
     // EMI's Fabric artifact; Loom remaps it to the project mappings (mojmap).
-    modCompileOnly "dev.emi:emi-fabric:${emi_version}"
-    modLocalRuntime "dev.emi:emi-fabric:${emi_version}"
+    modCompileOnly "cfx.local:emi-fabric:1.21.1"
+    modLocalRuntime "cfx.local:emi-fabric:1.21.1"
 
     testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
     testImplementation 'org.slf4j:slf4j-api:2.0.9'
+    // compileOnly does not reach the test classpath; the plugin test needs the API.
+    testImplementation "com.github.ControlFlexMC:control-flex-api:${controlflex_api_version}"
 }
 
 tasks.withType(JavaCompile).configureEach {
@@ -70,17 +82,18 @@ tasks.named('test', Test).configure {
 
 processResources {
     def expandProps = [
-        'mod_id'                  : mod_id,
-        'mod_name'                : mod_name,
-        'mod_version'             : mod_version,
-        'mod_authors'             : mod_authors,
-        'mod_license'             : mod_license,
-        'mod_description'         : mod_description,
-        'minecraft_version'       : minecraft_version,
-        'fabric_loader_version'   : fabric_loader_version,
-        'java_version'            : java_version,
-        'controlflex_version_range': controlflex_version_range_fabric,
-        'emi_version_range'       : emi_version_range,
+        'mod_id'                   : mod_id,
+        'mod_name'                 : mod_name,
+        'mod_version'              : mod_version,
+        'mod_authors'              : mod_authors,
+        'mod_license'              : mod_license,
+        'mod_description'          : mod_description,
+        'minecraft_version'        : minecraft_version,
+        'fabric_loader_version'    : fabric_loader_min,
+        'fabric_api_version'       : fabric_api_min,
+        'java_version'             : java_version,
+        'controlflex_version_range': controlflex_version_range,
+        'emi_version_range'        : emi_version_range,
     ]
 
     filesMatching(['fabric.mod.json']) {
