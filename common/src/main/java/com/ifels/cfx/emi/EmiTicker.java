@@ -152,6 +152,11 @@ public final class EmiTicker {
      * Mirrors EMI's private {@code hasFocusedTextField}. Unlike EMI's version this keeps scanning
      * sibling elements instead of returning on the first parent, so a focused box nested beside a
      * non-parent sibling is still found.
+     *
+     * <p>It also requires <em>focus</em> where EMI tests "active and visible": EMI 0.7.3 (1.18.2)
+     * registers its search box into the screen's element tree and {@code EditBox} does not override
+     * {@code isActive()}, so the looser test marked every inventory screen as focused and dropped
+     * every action (see {@link EmiGate#fieldBlocks}).</p>
      */
     private static boolean hasFocusedTextField(Screen screen, int depth) {
         return scanForFocusedTextField(screen.children(), depth);
@@ -163,7 +168,7 @@ public final class EmiTicker {
             return false;
         }
         for (GuiEventListener child : children) {
-            if (child instanceof EditBox box && box.isActive() && box.visible) {
+            if (child instanceof EditBox box && EmiGate.fieldBlocks(box.isFocused(), box.isVisible())) {
                 return true;
             }
             if (child instanceof ContainerEventHandler nested

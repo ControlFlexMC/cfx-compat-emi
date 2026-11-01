@@ -26,4 +26,21 @@ class EmiGateTest {
     void disabledBypassesTheFocusGate() {
         assertFalse(EmiGate.focusBlocks(true, true, true));
     }
+
+    @Test
+    void focusedVisibleFieldBlocks() {
+        assertTrue(EmiGate.fieldBlocks(true, true));
+    }
+
+    @Test
+    void visibleButUnfocusedFieldDoesNotBlock() {
+        // 1.18.2 regression: EMI 0.7.3 adds its search box to the screen's child list, so a
+        // visible-but-unfocused box must not count as "a text field has focus".
+        assertFalse(EmiGate.fieldBlocks(false, true));
+    }
+
+    @Test
+    void focusedHiddenFieldDoesNotBlock() {
+        assertFalse(EmiGate.fieldBlocks(true, false));
+    }
 }
