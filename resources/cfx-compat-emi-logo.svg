@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024" role="img" aria-labelledby="title desc">
+  <title id="title">CFX Compat EMI</title>
+  <desc id="desc">Pixel-art controller fused with an EMI recipe grid. EMI appears above the controller and CFX COMPAT below it.</desc>
+  <defs>
+    <radialGradient id="background" cx="50%" cy="45%" r="72%">
+      <stop offset="0" stop-color="#1b2030"/>
+      <stop offset="1" stop-color="#10121c"/>
+    </radialGradient>
+    <linearGradient id="emi-color" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#c190ff"/>
+      <stop offset="1" stop-color="#8848ed"/>
+    </linearGradient>
+    <linearGradient id="cfx-color" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffc071"/>
+      <stop offset="1" stop-color="#f3a04f"/>
+    </linearGradient>
+    <linearGradient id="slot-color" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#54e2c3"/>
+      <stop offset="0.58" stop-color="#398f91"/>
+      <stop offset="1" stop-color="#7650b7"/>
+    </linearGradient>
+    <filter id="soft-glow" x="-40%" y="-40%" width="180%" height="180%">
+      <feGaussianBlur stdDeviation="10" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="small-glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="5" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+
+    <symbol id="glyph-E" viewBox="0 0 5 7"><path d="M0 0H5V1H1V3H4V4H1V6H5V7H0Z"/></symbol>
+    <symbol id="glyph-M" viewBox="0 0 5 7"><path d="M0 0H1V1H2V2H3V1H4V0H5V7H4V3H3V4H2V3H1V7H0Z"/></symbol>
+    <symbol id="glyph-I" viewBox="0 0 5 7"><path d="M0 0H5V1H3V6H5V7H0V6H2V1H0Z"/></symbol>
+    <symbol id="glyph-C" viewBox="0 0 5 7"><path d="M1 0H5V1H1V6H5V7H1L0 6V1Z"/></symbol>
+    <symbol id="glyph-F" viewBox="0 0 5 7"><path d="M0 0H5V1H1V3H4V4H1V7H0Z"/></symbol>
+    <symbol id="glyph-X" viewBox="0 0 5 7"><path d="M0 0H1V1H2V2H3V1H4V0H5V2H4V3H3V4H4V5H5V7H4V6H3V5H2V6H1V7H0V5H1V4H2V3H1V2H0Z"/></symbol>
+    <symbol id="glyph-O" viewBox="0 0 5 7"><path fill-rule="evenodd" d="M1 0H4L5 1V6L4 7H1L0 6V1ZM1 1V6H4V1Z"/></symbol>
+    <symbol id="glyph-P" viewBox="0 0 5 7"><path fill-rule="evenodd" d="M0 0H4L5 1V3L4 4H1V7H0ZM1 1V3H4V1Z"/></symbol>
+    <symbol id="glyph-A" viewBox="0 0 5 7"><path fill-rule="evenodd" d="M1 0H4L5 1V7H4V4H1V7H0V1ZM1 1V3H4V1Z"/></symbol>
+    <symbol id="glyph-T" viewBox="0 0 5 7"><path d="M0 0H5V1H3V7H2V1H0Z"/></symbol>
+    <symbol id="recipe-slot" viewBox="0 0 64 64">
+      <rect width="64" height="64" rx="2" fill="url(#slot-color)"/>
+      <path d="M8 8H48V16H16V48H8Z" fill="#79f3d5" opacity=".72"/>
+      <path d="M48 16H56V56H16V48H48Z" fill="#68449c" opacity=".82"/>
+      <rect x="16" y="16" width="32" height="32" fill="#28666f" opacity=".72"/>
+    </symbol>
+  </defs>
+
+  <g id="background-layer">
+    <rect width="1024" height="1024" fill="url(#background)"/>
+  </g>
+
+  <g id="emi-label" fill="url(#emi-color)" filter="url(#soft-glow)" shape-rendering="crispEdges">
+    <use href="#glyph-E" x="292" y="70" width="120" height="168"/>
+    <use href="#glyph-M" x="452" y="70" width="120" height="168"/>
+    <use href="#glyph-I" x="612" y="70" width="120" height="168"/>
+  </g>
+
+  <g id="controller" stroke-linejoin="miter" shape-rendering="crispEdges">
+    <path d="M344 348H680V328H736V300H792V320H832V360H872V400H896V752H864V784H792V752H744V720H680V696H344V720H280V752H232V784H160V752H128V400H152V360H192V320H232V300H288V328H344Z" fill="#191e2b" stroke="#4bc8b5" stroke-width="12"/>
+    <path d="M216 304V272H248V240H272V272H304V304M720 304V272H752V240H776V272H808V304" fill="none" stroke="#357e7d" stroke-width="12"/>
+    <path d="M344 352H680" fill="none" stroke="#54d8c0" stroke-width="12"/>
+    <path d="M184 432H216V400H280V432H312V496H280V528H216V496H184Z" fill="#111722" stroke="#43b9aa" stroke-width="12"/>
+    <path d="M712 432H744V400H808V432H840V496H808V528H744V496H712Z" fill="#111722" stroke="#43b9aa" stroke-width="12"/>
+    <path d="M312 568H344V584H360V616H344V632H312M712 568H680V584H664V616H680V632H712" fill="none" stroke="#367c7c" stroke-width="10"/>
+  </g>
+
+  <g id="emi-recipe-grid" filter="url(#small-glow)" shape-rendering="crispEdges">
+    <rect x="368" y="384" width="288" height="304" fill="#14272e" stroke="#4ccbb8" stroke-width="10"/>
+    <rect x="384" y="400" width="256" height="272" fill="none" stroke="#286b6d" stroke-width="4"/>
+    <use href="#recipe-slot" x="394" y="428" width="64" height="64"/>
+    <use href="#recipe-slot" x="480" y="428" width="64" height="64"/>
+    <use href="#recipe-slot" x="566" y="428" width="64" height="64"/>
+    <use href="#recipe-slot" x="394" y="514" width="64" height="64"/>
+    <use href="#recipe-slot" x="480" y="514" width="64" height="64"/>
+    <use href="#recipe-slot" x="566" y="514" width="64" height="64"/>
+    <use href="#recipe-slot" x="394" y="600" width="64" height="64"/>
+    <use href="#recipe-slot" x="480" y="600" width="64" height="64"/>
+    <use href="#recipe-slot" x="566" y="600" width="64" height="64"/>
+  </g>
+
+  <g id="cfx-label" fill="url(#cfx-color)" shape-rendering="crispEdges">
+    <use href="#glyph-C" x="292" y="742" width="120" height="168"/>
+    <use href="#glyph-F" x="452" y="742" width="120" height="168"/>
+    <use href="#glyph-X" x="612" y="742" width="120" height="168"/>
+  </g>
+
+  <g id="compat-label" fill="#f2f0eb" shape-rendering="crispEdges">
+    <use href="#glyph-C" x="374" y="930" width="36" height="50.4"/>
+    <use href="#glyph-O" x="422" y="930" width="36" height="50.4"/>
+    <use href="#glyph-M" x="470" y="930" width="36" height="50.4"/>
+    <use href="#glyph-P" x="518" y="930" width="36" height="50.4"/>
+    <use href="#glyph-A" x="566" y="930" width="36" height="50.4"/>
+    <use href="#glyph-T" x="614" y="930" width="36" height="50.4"/>
+  </g>
+</svg>
