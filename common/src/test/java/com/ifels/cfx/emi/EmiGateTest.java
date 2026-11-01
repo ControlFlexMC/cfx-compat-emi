@@ -26,4 +26,19 @@ class EmiGateTest {
     void disabledBypassesTheFocusGate() {
         assertFalse(EmiGate.focusBlocks(true, true, true));
     }
+
+    @Test
+    void focusedVisibleFieldBlocks() {
+        assertTrue(EmiGate.fieldBlocks(true, true));
+    }
+
+    @Test
+    void visibleButUnfocusedFieldDoesNotBlock() {
+        assertFalse(EmiGate.fieldBlocks(false, true));
+    }
+
+    @Test
+    void focusedHiddenFieldDoesNotBlock() {
+        assertFalse(EmiGate.fieldBlocks(true, false));
+    }
 }

@@ -21,4 +21,17 @@ public final class EmiGate {
     public static boolean focusBlocks(boolean disabled, boolean searchFocused, boolean textFieldFocused) {
         return !disabled && (searchFocused || textFieldFocused);
     }
+
+    /**
+     * Whether one text field widget in the screen's element tree should swallow this press.
+     *
+     * <p><b>Focus is required.</b> "Active and visible" is not a focus test: {@code EditBox} does
+     * not override {@code isActive()}, so any visible, enabled box qualifies. EMI 1.1.x keeps its
+     * search box out of the element tree, which hides the difference — but 1.18.2 does not, and
+     * there the looser test marked every inventory screen as focused and dropped every action
+     * silently. Ask for focus directly.</p>
+     */
+    public static boolean fieldBlocks(boolean focused, boolean visible) {
+        return focused && visible;
+    }
 }
