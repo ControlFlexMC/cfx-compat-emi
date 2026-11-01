@@ -9,7 +9,7 @@
 
 - 项目：`cfx-compat-emi`
 - 目标版本：Minecraft 1.20.1 / Forge 47.x + Fabric 0.15.x
-- 依赖：ControlFlex ≥ 0.8.9、EMI 1.1.24（`dev.emi:emi-*`）
+- 依赖：ControlFlex ≥ 0.8.8、EMI 1.1.24（`dev.emi:emi-*`）
 - 状态：设计已确认，待实现
 
 ## 1. 背景
@@ -328,8 +328,8 @@ for (EmiAction action : fire) dispatch(action);      // 见 8.4
 
 ### 8.8 版本门控
 
-- 加载器元数据硬依赖：`controlflex` ≥ 0.8.9、`emi`（任意 1.20.1 版本）。两者缺失都由加载器拒绝启动桥接，运行期没有 `isModLoaded` 分支（D8）。
-- **区间语法按加载器分开**：Forge 的 `mods.toml` 用 Maven 区间 `[0.8.9,)`；Fabric 的 loader **不支持方括号区间** —— `VersionPredicateParser` 只认 `>=` / `<=` / `<` / `>` / `~` / `^` / `=` 以及空格分隔的多条件，`[0.8.9,)` 会被 `VersionParser` 解析成字面版本串，再以 `EQUAL` 去比 `0.8.9`，必然失败。所以 `fabric.mod.json` 用 `>=0.8.9` / `>=1.1.0`，对应 `gradle.properties` 里的 `controlflex_version_range_fabric`。
+- 加载器元数据硬依赖：`controlflex` ≥ 0.8.8、`emi`（任意 1.20.1 版本）。两者缺失都由加载器拒绝启动桥接，运行期没有 `isModLoaded` 分支（D8）。
+- **区间语法按加载器分开**：Forge 的 `mods.toml` 用 Maven 区间 `[0.8.8,)`；Fabric 的 loader **不支持方括号区间** —— `VersionPredicateParser` 只认 `>=` / `<=` / `<` / `>` / `~` / `^` / `=` 以及空格分隔的多条件，`[0.8.8,)` 会被 `VersionParser` 解析成字面版本串，再以 `EQUAL` 去比 `0.8.8`，必然失败。所以 `fabric.mod.json` 用 `>=0.8.8` / `>=1.1.0`，对应 `gradle.properties` 里的 `controlflex_version_range_fabric`。
 - 运行时不做额外版本判断（v1 只用 `ICompatAssetInstaller`，是 0.8.5 起的稳定接口；真正的风险在 EMI 侧的实现类，见 §12）。
 
 ### 8.9 日志
@@ -361,7 +361,7 @@ for (EmiAction action : fire) dispatch(action);      // 见 8.4
   - `compileOnly "com.github.ControlFlexMC:control-flex-api:${controlflex_api_version}"`（JitPack）
   - Forge：`compileOnly fg.deobf("dev.emi:emi-forge:${emi_version}")`（`repo.sleeping.town`）
   - Fabric：`modCompileOnly "dev.emi:emi-fabric:${emi_version}"` + `modLocalRuntime`（便于本地跑）
-- `gradle.properties` 关键项：`mod_id=cfx_compat_emi`、`mod_name=Control Flex x EMI`、`minecraft_version=1.20.1`、`emi_version=1.1.24+1.20.1`、`controlflex_version_range=[0.8.9,)`。
+- `gradle.properties` 关键项：`mod_id=cfx_compat_emi`、`mod_name=Control Flex x EMI`、`minecraft_version=1.20.1`、`emi_version=1.1.24+1.20.1`、`controlflex_version_range=[0.8.8,)`。
 - 无 mixin 配置，无 refmap，无 `mixins.json`。
 - `common` 内的测试：`EdgeDetector` 的单测放在各 loader 子工程的 `src/test`（沿用 create 的做法，`compileClasspath += sourceSets.main.output`）。
 

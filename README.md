@@ -3,7 +3,7 @@
 ControlFlex bridge mod for [EMI](https://modrinth.com/mod/emi). Exposes EMI's actions as bindable
 ControlFlex actions, so a controller can drive the recipe viewer without touching a keyboard.
 
-Requires **Minecraft 1.19.2**, **ControlFlex ≥ 0.8.9** and **EMI** (1.0.x). Forge and Fabric are
+Requires **Minecraft 1.19.2**, **ControlFlex ≥ 0.8.8** and **EMI** (1.0.x). Forge and Fabric are
 both supported from the same source.
 
 ## What it does
