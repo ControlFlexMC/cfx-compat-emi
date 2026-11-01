@@ -10,7 +10,7 @@
 
 - Project: `cfx-compat-emi`
 - Targets: Minecraft 1.20.1 / Forge 47.x + Fabric 0.15.x
-- Depends on: ControlFlex ≥ 0.8.9, EMI 1.1.24 (`dev.emi:emi-*`)
+- Depends on: ControlFlex ≥ 0.8.8, EMI 1.1.24 (`dev.emi:emi-*`)
 - Status: design approved, ready to implement
 
 ## 1. Background
@@ -329,8 +329,8 @@ Notes:
 
 ### 8.8 Version gating
 
-- Loader metadata hard-depends on `controlflex` ≥ 0.8.9 and `emi` (any 1.20.1 build). Both are mandatory: the loader refuses to start the bridge, and there is no runtime `isModLoaded` branch (D8).
-- **Range syntax differs per loader:** Forge's `mods.toml` uses Maven ranges (`[0.8.9,)`); Fabric's loader **does not support bracket ranges** — `VersionPredicateParser` understands only `>=` / `<=` / `<` / `>` / `~` / `^` / `=` plus space-separated terms. `[0.8.9,)` is parsed as a literal version and compared with `EQUAL`, which can never match `0.8.9`. `fabric.mod.json` therefore uses `>=0.8.9` / `>=1.1.0`, fed by `controlflex_version_range_fabric`.
+- Loader metadata hard-depends on `controlflex` ≥ 0.8.8 and `emi` (any 1.20.1 build). Both are mandatory: the loader refuses to start the bridge, and there is no runtime `isModLoaded` branch (D8).
+- **Range syntax differs per loader:** Forge's `mods.toml` uses Maven ranges (`[0.8.8,)`); Fabric's loader **does not support bracket ranges** — `VersionPredicateParser` understands only `>=` / `<=` / `<` / `>` / `~` / `^` / `=` plus space-separated terms. `[0.8.8,)` is parsed as a literal version and compared with `EQUAL`, which can never match `0.8.8`. `fabric.mod.json` therefore uses `>=0.8.8` / `>=1.1.0`, fed by `controlflex_version_range_fabric`.
 - No extra runtime version check in v1 (the only API surface used is `ICompatAssetInstaller`, stable since 0.8.5; the real risk is on EMI's side, see §12).
 
 ### 8.9 Logging
@@ -362,7 +362,7 @@ Bridge tick
   - `compileOnly "com.github.ControlFlexMC:control-flex-api:${controlflex_api_version}"` (JitPack)
   - Forge: `compileOnly fg.deobf("dev.emi:emi-forge:${emi_version}")` (from `repo.sleeping.town`)
   - Fabric: `modCompileOnly "dev.emi:emi-fabric:${emi_version}"` plus `modLocalRuntime` for local runs
-- Key `gradle.properties` entries: `mod_id=cfx_compat_emi`, `mod_name=Control Flex x EMI`, `minecraft_version=1.20.1`, `emi_version=1.1.24+1.20.1`, `controlflex_version_range=[0.8.9,)`.
+- Key `gradle.properties` entries: `mod_id=cfx_compat_emi`, `mod_name=Control Flex x EMI`, `minecraft_version=1.20.1`, `emi_version=1.1.24+1.20.1`, `controlflex_version_range=[0.8.8,)`.
 - No mixin config, no refmap, no `mixins.json`.
 - Tests for `EdgeDetector` live in each loader's `src/test` (same trick as `cfx-compat-create`: `compileClasspath += sourceSets.main.output`).
 
