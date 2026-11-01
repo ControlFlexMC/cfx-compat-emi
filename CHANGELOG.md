@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.1.0
+## 0.8.8
 
 - 22 EMI actions exposed to ControlFlex on Forge and Fabric (MC 1.20.1).
 - Actions run through EMI's own interaction dispatchers (`stackInteraction`, `genericInteraction`,
