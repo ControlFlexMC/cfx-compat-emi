@@ -41,4 +41,19 @@ class EmiGateTest {
     void screenWithEmiBaseIsAnEmiScreen() {
         assertTrue(EmiGate.emiScreenActive(false, false));
     }
+
+    @Test
+    void focusedVisibleFieldBlocks() {
+        assertTrue(EmiGate.fieldBlocks(true, true));
+    }
+
+    @Test
+    void visibleButUnfocusedFieldDoesNotBlock() {
+        assertFalse(EmiGate.fieldBlocks(false, true));
+    }
+
+    @Test
+    void focusedHiddenFieldDoesNotBlock() {
+        assertFalse(EmiGate.fieldBlocks(true, false));
+    }
 }
