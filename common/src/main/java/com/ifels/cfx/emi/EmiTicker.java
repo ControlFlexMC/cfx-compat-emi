@@ -1,5 +1,6 @@
 package com.ifels.cfx.emi;
 
+import dev.emi.emi.EmiReloadManager;
 import dev.emi.emi.api.EmiApi;
 import dev.emi.emi.config.EmiConfig;
 import dev.emi.emi.screen.EmiScreen;
@@ -77,8 +78,9 @@ public final class EmiTicker {
             return;
         }
 
-        // EMI 0.7.x has no EmiScreenManager.isDisabled(); the switch is the config flag itself.
-        boolean disabled = !EmiConfig.enabled;
+        // EMI 0.7.x keeps EmiScreenManager.isDisabled() private, so rebuild it from the same two
+        // inputs EMI uses: the config switch and the reload gate.
+        boolean disabled = EmiGate.emiDisabled(EmiReloadManager.isLoaded(), EmiConfig.enabled);
         boolean focusBlocks = EmiGate.focusBlocks(
                 disabled,
                 EmiApi.isSearchFocused(),

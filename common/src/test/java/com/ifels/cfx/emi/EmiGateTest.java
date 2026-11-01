@@ -43,4 +43,21 @@ class EmiGateTest {
     void focusedHiddenFieldDoesNotBlock() {
         assertFalse(EmiGate.fieldBlocks(true, false));
     }
+
+    @Test
+    void enabledAndLoadedIsNotDisabled() {
+        assertFalse(EmiGate.emiDisabled(true, true));
+    }
+
+    @Test
+    void disabledByTheConfigSwitch() {
+        assertTrue(EmiGate.emiDisabled(true, false));
+    }
+
+    @Test
+    void disabledWhileReloading() {
+        // The gap this guards: with only the config switch checked, the reload window looked
+        // enabled and actions were dispatched into an empty EMI.
+        assertTrue(EmiGate.emiDisabled(false, true));
+    }
 }

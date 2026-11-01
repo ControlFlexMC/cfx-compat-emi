@@ -34,4 +34,17 @@ public final class EmiGate {
     public static boolean fieldBlocks(boolean focused, boolean visible) {
         return focused && visible;
     }
+
+    /**
+     * Whether EMI is currently unavailable, i.e. {@code EmiScreenManager.isDisabled()} on the
+     * versions where that method is public.
+     *
+     * <p>Two inputs, both required: the config switch, and the resource reload. While EMI is
+     * reloading its sidebars and search index are empty, so forwarding an action there is the one
+     * case that can throw or act on stale state — EMI's own {@code keyPressed} drops everything
+     * except "toggle visibility" for the same reason.</p>
+     */
+    public static boolean emiDisabled(boolean loaded, boolean enabled) {
+        return !loaded || !enabled;
+    }
 }
